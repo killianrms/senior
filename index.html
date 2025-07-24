@@ -590,6 +590,14 @@
                 <!-- Les boutons seront générés dynamiquement -->
             </div>
 
+            <!-- Barre de recherche -->
+            <div style="background: #f8f9ff; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="searchInput">🔍 Rechercher un joueur (prénom/nom) ou une date (JJ/MM/AAAA):</label>
+                    <input type="text" id="searchInput" placeholder="Ex: Lucas, Martin, 15/12/2024..." style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;" onkeyup="performSearch()">
+                </div>
+            </div>
+
             <div class="presence-grid">
                 <table class="presence-table" id="presenceTable">
                     <thead>
@@ -966,7 +974,7 @@
                 if (!presences[player.id]) {
                     presences[player.id] = {};
                     sessions.forEach(session => {
-                        presences[player.id][session.id] = 'ap';
+                        presences[player.id][session.id] = 'pa';
                     });
                 }
             });
@@ -1029,7 +1037,7 @@
                 
                 filteredSessions.forEach(session => {
                     const td = document.createElement('td');
-                    const status = presences[player.id][session.id] || 'ap';
+                    const status = presences[player.id][session.id] || 'pa';
                     
                     const select = document.createElement('select');
                     select.className = `presence-cell status-${status}`;
@@ -1069,6 +1077,217 @@
             presences[playerId][sessionId] = status;
             updateStats();
             autoSave();
+        }
+
+        // Fonction de recherche
+        function performSearch() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            if (searchTerm === '') {
+                // Si la recherche est vide, afficher tout normalement
+                renderPresenceTable();
+                return;
+            }
+            
+            // Vérifier si c'est une recherche de date (format JJ/MM/AAAA ou variantes)
+            const datePattern = /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/;
+            const dateMatch = searchTerm.match(datePattern);
+            
+            if (dateMatch) {
+                // Recherche de date
+                searchByDate(searchTerm, dateMatch);
+            } else {
+                // Recherche de joueur
+                searchByPlayer(searchTerm);
+            }
+        }
+
+        // Recherche par date - garde tous les joueurs visibles mais met en évidence la date
+        function searchByDate(searchTerm, dateMatch) {
+            const headerRow = document.getElementById('headerRow');
+            const presenceBody = document.getElementById('presenceBody');
+            
+            // Filtrer les sessions selon la période actuelle
+            let filteredSessions = sessions;
+            const currentPeriodObj = customPeriods.find(p => p.id === currentPeriod);
+            
+            if (currentPeriodObj && currentPeriodObj.startDate && currentPeriodObj.endDate) {
+                filteredSessions = sessions.filter(s => 
+                    s.date >= currentPeriodObj.startDate && s.date <= currentPeriodObj.endDate
+                );
+            }
+            
+            // Réinitialiser l'en-tête
+            headerRow.innerHTML = '<th>Prénom</th><th>Nom</th>';
+            
+            // Construire la date recherchée pour comparaison
+            let day = parseInt(dateMatch[1]);
+            let month = parseInt(dateMatch[2]);
+            let year = parseInt(dateMatch[3]);
+            
+            // Ajuster l'année si elle est à 2 chiffres
+            if (year < 100) {
+                year += year < 50 ? 2000 : 1900;
+            }
+            
+            // Ajouter les colonnes de dates avec mise en évidence
+            filteredSessions.forEach(session => {
+                const th = document.createElement('th');
+                const sessionDate = new Date(session.date);
+                const isMatch = sessionDate.getDate() === day && 
+                               (sessionDate.getMonth() + 1) === month && 
+                               sessionDate.getFullYear() === year;
+                
+                th.innerHTML = `${sessionDate.getDate()}/${sessionDate.getMonth() + 1}<br><small>${session.type}</small>`;
+                th.style.whiteSpace = 'nowrap';
+                
+                // Mettre en évidence la date correspondante
+                if (isMatch) {
+                    th.style.backgroundColor = '#ffc107';
+                    th.style.color = '#333';
+                    th.style.fontWeight = 'bold';
+                    th.style.transform = 'scale(1.05)';
+                    th.title = 'Date trouvée !';
+                }
+                
+                headerRow.appendChild(th);
+            });
+            
+            // Rendre toutes les lignes des joueurs (pas de filtrage)
+            presenceBody.innerHTML = '';
+            players.forEach(player => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${player.prenom}</td><td>${player.nom}</td>`;
+                
+                filteredSessions.forEach(session => {
+                    const td = document.createElement('td');
+                    const status = presences[player.id][session.id] || 'pa';
+                    
+                    const select = document.createElement('select');
+                    select.className = `presence-cell status-${status}`;
+                    select.value = status;
+                    select.onchange = function() {
+                        updatePresence(player.id, session.id, this.value);
+                        this.className = `presence-cell status-${this.value}`;
+                    };
+                    
+                    const options = [
+                        { value: 'ap', text: 'AP', class: 'status-ap' },
+                        { value: 'asp', text: 'ASP', class: 'status-asp' },
+                        { value: 'bl', text: 'BL', class: 'status-bl' },
+                        { value: 'vac', text: 'VAC', class: 'status-vac' },
+                        { value: 'pa', text: 'PA', class: 'status-pa' },
+                        { value: 'pb', text: 'PB', class: 'status-pb' },
+                        { value: 'pc', text: 'PC', class: 'status-pc' }
+                    ];
+                    
+                    options.forEach(opt => {
+                        const option = document.createElement('option');
+                        option.value = opt.value;
+                        option.textContent = opt.text;
+                        select.appendChild(option);
+                    });
+                    
+                    td.appendChild(select);
+                    row.appendChild(td);
+                });
+                
+                presenceBody.appendChild(row);
+            });
+        }
+
+        // Recherche par joueur - filtre les joueurs mais garde toutes les dates
+        function searchByPlayer(searchTerm) {
+            const headerRow = document.getElementById('headerRow');
+            const presenceBody = document.getElementById('presenceBody');
+            
+            // Filtrer les sessions selon la période actuelle
+            let filteredSessions = sessions;
+            const currentPeriodObj = customPeriods.find(p => p.id === currentPeriod);
+            
+            if (currentPeriodObj && currentPeriodObj.startDate && currentPeriodObj.endDate) {
+                filteredSessions = sessions.filter(s => 
+                    s.date >= currentPeriodObj.startDate && s.date <= currentPeriodObj.endDate
+                );
+            }
+            
+            // Réinitialiser l'en-tête
+            headerRow.innerHTML = '<th>Prénom</th><th>Nom</th>';
+            
+            // Ajouter les colonnes de dates
+            filteredSessions.forEach(session => {
+                const th = document.createElement('th');
+                const date = new Date(session.date);
+                th.innerHTML = `${date.getDate()}/${date.getMonth() + 1}<br><small>${session.type}</small>`;
+                th.style.whiteSpace = 'nowrap';
+                headerRow.appendChild(th);
+            });
+            
+            // Filtrer les joueurs correspondants à la recherche
+            const filteredPlayers = players.filter(player => 
+                player.prenom.toLowerCase().includes(searchTerm) || 
+                player.nom.toLowerCase().includes(searchTerm)
+            );
+            
+            // Rendre les lignes des joueurs filtrés
+            presenceBody.innerHTML = '';
+            filteredPlayers.forEach(player => {
+                const row = document.createElement('tr');
+                
+                // Mettre en évidence le texte correspondant
+                const prenomHighlighted = highlightSearchTerm(player.prenom, searchTerm);
+                const nomHighlighted = highlightSearchTerm(player.nom, searchTerm);
+                
+                row.innerHTML = `<td>${prenomHighlighted}</td><td>${nomHighlighted}</td>`;
+                
+                filteredSessions.forEach(session => {
+                    const td = document.createElement('td');
+                    const status = presences[player.id][session.id] || 'pa';
+                    
+                    const select = document.createElement('select');
+                    select.className = `presence-cell status-${status}`;
+                    select.value = status;
+                    select.onchange = function() {
+                        updatePresence(player.id, session.id, this.value);
+                        this.className = `presence-cell status-${this.value}`;
+                    };
+                    
+                    const options = [
+                        { value: 'ap', text: 'AP', class: 'status-ap' },
+                        { value: 'asp', text: 'ASP', class: 'status-asp' },
+                        { value: 'bl', text: 'BL', class: 'status-bl' },
+                        { value: 'vac', text: 'VAC', class: 'status-vac' },
+                        { value: 'pa', text: 'PA', class: 'status-pa' },
+                        { value: 'pb', text: 'PB', class: 'status-pb' },
+                        { value: 'pc', text: 'PC', class: 'status-pc' }
+                    ];
+                    
+                    options.forEach(opt => {
+                        const option = document.createElement('option');
+                        option.value = opt.value;
+                        option.textContent = opt.text;
+                        select.appendChild(option);
+                    });
+                    
+                    td.appendChild(select);
+                    row.appendChild(td);
+                });
+                
+                presenceBody.appendChild(row);
+            });
+            
+            // Afficher un message si aucun joueur trouvé
+            if (filteredPlayers.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="${filteredSessions.length + 2}" style="text-align: center; padding: 20px; color: #999; font-style: italic;">Aucun joueur trouvé pour "${searchTerm}"</td>`;
+                presenceBody.appendChild(row);
+            }
+        }
+
+        // Fonction utilitaire pour surligner le texte de recherche
+        function highlightSearchTerm(text, searchTerm) {
+            const regex = new RegExp(`(${searchTerm})`, 'gi');
+            return text.replace(regex, '<mark style="background-color: #ffc107; padding: 2px 4px; border-radius: 3px;">$1</mark>');
         }
 
         // Calculer les totaux
@@ -1409,7 +1628,7 @@
             
             // Initialiser les présences pour ce joueur
             sessions.forEach(session => {
-                presences[newPlayer.id][session.id] = 'ap';
+                presences[newPlayer.id][session.id] = 'pa';
             });
             
             updateStats();
@@ -1547,7 +1766,7 @@
             
             // Initialiser les présences pour cette session
             players.forEach(player => {
-                presences[player.id][newSession.id] = 'ap';
+                presences[player.id][newSession.id] = 'pa';
             });
             
             updateStats();
