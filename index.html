@@ -291,39 +291,74 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
-        .status-ap {
-            background: #f8d7da;
-            color: #721c24;
+        .status-abp {
+            background: #ffcdd2;
+            color: #d32f2f;
         }
 
-        .status-asp {
-            background: #dc3545;
+        .status-absp {
+            background: #d32f2f;
             color: white;
         }
 
-        .status-bl {
-            background: #cce5ff;
-            color: #004085;
+        .status-bls {
+            background: #ffcc80;
+            color: #f57c00;
         }
 
         .status-vac {
-            background: #e2e3e5;
-            color: #383d41;
+            background: #f8bbd9;
+            color: #c2185b;
         }
 
-        .status-pa {
-            background: #d4edda;
-            color: #155724;
+        .status-pst {
+            background: #c8e6c9;
+            color: #2e7d32;
         }
 
-        .status-pb {
-            background: #b3d9ff;
-            color: #0056b3;
+        .status-ca {
+            background: #1976d2;
+            color: white;
         }
 
-        .status-pc {
-            background: #fff3cd;
-            color: #856404;
+        .status-cb {
+            background: #42a5f5;
+            color: white;
+        }
+
+        .status-cc {
+            background: #90caf9;
+            color: #1976d2;
+        }
+
+        .status-ret {
+            background: #fff176;
+            color: #f57f17;
+        }
+        
+        /* Styles spécifiques pour les matchs */
+        .match-session .status-pst {
+            background: #4caf50;
+            color: white;
+            border: 2px solid #2e7d32;
+        }
+        
+        .match-session .status-ca {
+            background: #0d47a1;
+            color: white;
+            border: 2px solid #001970;
+        }
+        
+        .match-session .status-cb {
+            background: #1976d2;
+            color: white;
+            border: 2px solid #0d47a1;
+        }
+        
+        .match-session .status-cc {
+            background: #42a5f5;
+            color: white;
+            border: 2px solid #1976d2;
         }
 
         .ranking-table {
@@ -567,6 +602,7 @@
                     <button class="btn btn-primary" onclick="showManagePlayersModal()">👥 Gérer Joueurs</button>
                     <button class="btn btn-secondary" onclick="showManageDatesModal()">📅 Gérer Dates</button>
                     <button class="btn btn-warning" onclick="showManagePeriodsModal()">⏱️ Gérer Périodes</button>
+                    <button class="btn btn-warning" onclick="showPlayerColorsModal()">🎨 Couleurs Joueurs</button>
                     <button class="btn btn-success" onclick="saveData()">💾 Sauvegarder</button>
                 </div>
             </div>
@@ -590,11 +626,64 @@
                 <!-- Les boutons seront générés dynamiquement -->
             </div>
 
-            <!-- Barre de recherche -->
+            <!-- Lexique -->
             <div style="background: #f8f9ff; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label for="searchInput">🔍 Rechercher un joueur (prénom/nom) ou une date (JJ/MM/AAAA):</label>
-                    <input type="text" id="searchInput" placeholder="Ex: Lucas, Martin, 15/12/2024..." style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;" onkeyup="performSearch()">
+                <h3 style="margin-bottom: 15px; color: #333;">📚 Lexique des Statuts</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="status-abp" style="padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px;">AbP</span>
+                        <span>Absent prévenu</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="status-absp" style="padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px;">AbSP</span>
+                        <span>Absent sans prévenir</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="status-bls" style="padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px;">BLS</span>
+                        <span>Blessure</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="status-vac" style="padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px;">VAC</span>
+                        <span>Vacances</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="status-pst" style="padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px;">PST</span>
+                        <span>Présent</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="status-ca" style="padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px;">Ca</span>
+                        <span>Convoqué équipe A</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="status-cb" style="padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px;">Cb</span>
+                        <span>Convoqué équipe B</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="status-cc" style="padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px;">Cc</span>
+                        <span>Convoqué équipe C</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="status-ret" style="padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px;">RET</span>
+                        <span>Retard</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Barre de recherche et filtres -->
+            <div style="background: #f8f9ff; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="searchInput">🔍 Rechercher un joueur (prénom/nom) ou une date (JJ/MM/AAAA):</label>
+                        <input type="text" id="searchInput" placeholder="Ex: Lucas, Martin, 15/12/2024..." style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;" onkeyup="performSearch()">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="sortSelect">📋 Trier par:</label>
+                        <select id="sortSelect" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;" onchange="sortPlayers()">
+                            <option value="default">Ordre par défaut</option>
+                            <option value="alphabetical">Ordre alphabétique (prénom)</option>
+                            <option value="recent">Plus récent au plus ancien</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -732,11 +821,22 @@
         let players = [];
         let sessions = [];
         let presences = {};
+        let playerColors = {};
         let currentPeriod = 'all';
+        let currentSort = 'default';
         let customPeriods = [
             { id: 'all', name: 'Toute la saison', startDate: null, endDate: null },
             { id: '2024', name: 'Août-Déc 2024', startDate: '2024-08-01', endDate: '2024-12-31' },
-            { id: '2025', name: 'Jan-Mai 2025', startDate: '2025-01-01', endDate: '2025-05-31' }
+            { id: '2025', name: 'Jan-Mai 2025', startDate: '2025-01-01', endDate: '2025-05-31' },
+            { id: 'sep2024', name: 'Septembre 2024', startDate: '2024-09-01', endDate: '2024-09-30' },
+            { id: 'oct2024', name: 'Octobre 2024', startDate: '2024-10-01', endDate: '2024-10-31' },
+            { id: 'nov2024', name: 'Novembre 2024', startDate: '2024-11-01', endDate: '2024-11-30' },
+            { id: 'dec2024', name: 'Décembre 2024', startDate: '2024-12-01', endDate: '2024-12-31' },
+            { id: 'jan2025', name: 'Janvier 2025', startDate: '2025-01-01', endDate: '2025-01-31' },
+            { id: 'feb2025', name: 'Février 2025', startDate: '2025-02-01', endDate: '2025-02-28' },
+            { id: 'mar2025', name: 'Mars 2025', startDate: '2025-03-01', endDate: '2025-03-31' },
+            { id: 'apr2025', name: 'Avril 2025', startDate: '2025-04-01', endDate: '2025-04-30' },
+            { id: 'may2025', name: 'Mai 2025', startDate: '2025-05-01', endDate: '2025-05-31' }
         ];
 
         // Initialisation
@@ -974,7 +1074,7 @@
                 if (!presences[player.id]) {
                     presences[player.id] = {};
                     sessions.forEach(session => {
-                        presences[player.id][session.id] = 'pa';
+                        presences[player.id][session.id] = 'pst';
                     });
                 }
             });
@@ -991,7 +1091,7 @@
             players.forEach(player => {
                 sessions.forEach(session => {
                     const status = presences[player.id] && presences[player.id][session.id];
-                    if (status === 'pa' || status === 'pb' || status === 'pc') {
+                    if (status === 'pst') {
                         totalPresent++;
                     }
                     totalPossible++;
@@ -1031,13 +1131,19 @@
             
             // Rendre les lignes des joueurs
             presenceBody.innerHTML = '';
-            players.forEach(player => {
+            const sortedPlayers = getSortedPlayers();
+            sortedPlayers.forEach(player => {
                 const row = document.createElement('tr');
                 row.innerHTML = `<td>${player.prenom}</td><td>${player.nom}</td>`;
                 
                 filteredSessions.forEach(session => {
                     const td = document.createElement('td');
-                    const status = presences[player.id][session.id] || 'pa';
+                    const status = presences[player.id][session.id] || 'pst';
+                    
+                    // Ajouter une classe spéciale pour les matchs
+                    if (session.type === 'Match') {
+                        td.className = 'match-session';
+                    }
                     
                     const select = document.createElement('select');
                     select.className = `presence-cell status-${status}`;
@@ -1048,13 +1154,15 @@
                     };
                     
                     const options = [
-                        { value: 'ap', text: 'AP', class: 'status-ap' },
-                        { value: 'asp', text: 'ASP', class: 'status-asp' },
-                        { value: 'bl', text: 'BL', class: 'status-bl' },
+                        { value: 'abp', text: 'AbP', class: 'status-abp' },
+                        { value: 'absp', text: 'AbSP', class: 'status-absp' },
+                        { value: 'bls', text: 'BLS', class: 'status-bls' },
                         { value: 'vac', text: 'VAC', class: 'status-vac' },
-                        { value: 'pa', text: 'PA', class: 'status-pa' },
-                        { value: 'pb', text: 'PB', class: 'status-pb' },
-                        { value: 'pc', text: 'PC', class: 'status-pc' }
+                        { value: 'pst', text: 'PST', class: 'status-pst' },
+                        { value: 'ca', text: 'Ca', class: 'status-ca' },
+                        { value: 'cb', text: 'Cb', class: 'status-cb' },
+                        { value: 'cc', text: 'Cc', class: 'status-cc' },
+                        { value: 'ret', text: 'RET', class: 'status-ret' }
                     ];
                     
                     options.forEach(opt => {
@@ -1079,6 +1187,32 @@
             autoSave();
         }
 
+        // Fonction de tri des joueurs
+        function sortPlayers() {
+            currentSort = document.getElementById('sortSelect').value;
+            renderPresenceTable();
+        }
+        
+        // Obtenir les joueurs triés selon la sélection
+        function getSortedPlayers() {
+            let sortedPlayers = [...players];
+            
+            switch(currentSort) {
+                case 'alphabetical':
+                    sortedPlayers.sort((a, b) => a.prenom.localeCompare(b.prenom));
+                    break;
+                case 'recent':
+                    // Trier par date d'ajout (ID décroissant)
+                    sortedPlayers.sort((a, b) => b.id - a.id);
+                    break;
+                default:
+                    // Ordre par défaut (tel qu'ajouté)
+                    break;
+            }
+            
+            return sortedPlayers;
+        }
+        
         // Fonction de recherche
         function performSearch() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
@@ -1155,13 +1289,27 @@
             
             // Rendre toutes les lignes des joueurs (pas de filtrage)
             presenceBody.innerHTML = '';
-            players.forEach(player => {
+            const sortedPlayers = getSortedPlayers();
+            sortedPlayers.forEach(player => {
                 const row = document.createElement('tr');
+                
+                // Appliquer une couleur personnalisée si définie
+                const customColor = playerColors[player.id];
+                if (customColor) {
+                    row.style.backgroundColor = customColor + '20';
+                    row.style.borderLeft = `4px solid ${customColor}`;
+                }
+                
                 row.innerHTML = `<td>${player.prenom}</td><td>${player.nom}</td>`;
                 
                 filteredSessions.forEach(session => {
                     const td = document.createElement('td');
-                    const status = presences[player.id][session.id] || 'pa';
+                    const status = presences[player.id][session.id] || 'pst';
+                    
+                    // Ajouter une classe spéciale pour les matchs
+                    if (session.type === 'Match') {
+                        td.className = 'match-session';
+                    }
                     
                     const select = document.createElement('select');
                     select.className = `presence-cell status-${status}`;
@@ -1172,13 +1320,15 @@
                     };
                     
                     const options = [
-                        { value: 'ap', text: 'AP', class: 'status-ap' },
-                        { value: 'asp', text: 'ASP', class: 'status-asp' },
-                        { value: 'bl', text: 'BL', class: 'status-bl' },
+                        { value: 'abp', text: 'AbP', class: 'status-abp' },
+                        { value: 'absp', text: 'AbSP', class: 'status-absp' },
+                        { value: 'bls', text: 'BLS', class: 'status-bls' },
                         { value: 'vac', text: 'VAC', class: 'status-vac' },
-                        { value: 'pa', text: 'PA', class: 'status-pa' },
-                        { value: 'pb', text: 'PB', class: 'status-pb' },
-                        { value: 'pc', text: 'PC', class: 'status-pc' }
+                        { value: 'pst', text: 'PST', class: 'status-pst' },
+                        { value: 'ca', text: 'Ca', class: 'status-ca' },
+                        { value: 'cb', text: 'Cb', class: 'status-cb' },
+                        { value: 'cc', text: 'Cc', class: 'status-cc' },
+                        { value: 'ret', text: 'RET', class: 'status-ret' }
                     ];
                     
                     options.forEach(opt => {
@@ -1224,7 +1374,8 @@
             });
             
             // Filtrer les joueurs correspondants à la recherche
-            const filteredPlayers = players.filter(player => 
+            const sortedPlayers = getSortedPlayers();
+            const filteredPlayers = sortedPlayers.filter(player => 
                 player.prenom.toLowerCase().includes(searchTerm) || 
                 player.nom.toLowerCase().includes(searchTerm)
             );
@@ -1234,6 +1385,13 @@
             filteredPlayers.forEach(player => {
                 const row = document.createElement('tr');
                 
+                // Appliquer une couleur personnalisée si définie
+                const customColor = playerColors[player.id];
+                if (customColor) {
+                    row.style.backgroundColor = customColor + '20';
+                    row.style.borderLeft = `4px solid ${customColor}`;
+                }
+                
                 // Mettre en évidence le texte correspondant
                 const prenomHighlighted = highlightSearchTerm(player.prenom, searchTerm);
                 const nomHighlighted = highlightSearchTerm(player.nom, searchTerm);
@@ -1242,7 +1400,12 @@
                 
                 filteredSessions.forEach(session => {
                     const td = document.createElement('td');
-                    const status = presences[player.id][session.id] || 'pa';
+                    const status = presences[player.id][session.id] || 'pst';
+                    
+                    // Ajouter une classe spéciale pour les matchs
+                    if (session.type === 'Match') {
+                        td.className = 'match-session';
+                    }
                     
                     const select = document.createElement('select');
                     select.className = `presence-cell status-${status}`;
@@ -1253,13 +1416,15 @@
                     };
                     
                     const options = [
-                        { value: 'ap', text: 'AP', class: 'status-ap' },
-                        { value: 'asp', text: 'ASP', class: 'status-asp' },
-                        { value: 'bl', text: 'BL', class: 'status-bl' },
+                        { value: 'abp', text: 'AbP', class: 'status-abp' },
+                        { value: 'absp', text: 'AbSP', class: 'status-absp' },
+                        { value: 'bls', text: 'BLS', class: 'status-bls' },
                         { value: 'vac', text: 'VAC', class: 'status-vac' },
-                        { value: 'pa', text: 'PA', class: 'status-pa' },
-                        { value: 'pb', text: 'PB', class: 'status-pb' },
-                        { value: 'pc', text: 'PC', class: 'status-pc' }
+                        { value: 'pst', text: 'PST', class: 'status-pst' },
+                        { value: 'ca', text: 'Ca', class: 'status-ca' },
+                        { value: 'cb', text: 'Cb', class: 'status-cb' },
+                        { value: 'cc', text: 'Cc', class: 'status-cc' },
+                        { value: 'ret', text: 'RET', class: 'status-ret' }
                     ];
                     
                     options.forEach(opt => {
@@ -1299,11 +1464,14 @@
                 
                 sessions.forEach(session => {
                     const status = presences[player.id][session.id];
-                    if (status === 'pa' || status === 'pb' || status === 'pc') {
+                    if (status === 'pst' && session.type === 'Entraînement') {
                         present++;
                         points += 3;
                     } else if (status === 'vac') {
                         points += 1;
+                    } else if (status === 'ca' || status === 'cb' || status === 'cc') {
+                        present++;
+                        points += 3;
                     }
                 });
                 
@@ -1371,14 +1539,17 @@
                 
                 sessions.forEach(session => {
                     const status = presences[player.id][session.id];
-                    if (status === 'pa' || status === 'pb' || status === 'pc') {
+                    if (status === 'pst') {
                         present++;
                         points += 3;
                     } else if (status === 'vac') {
                         repos++;
                         points += 1;
-                    } else if (status === 'ap' || status === 'asp' || status === 'bl') {
+                    } else if (status === 'abp' || status === 'absp' || status === 'bls') {
                         absent++;
+                    } else if (status === 'ca' || status === 'cb' || status === 'cc') {
+                        present++;
+                        points += 3;
                     }
                 });
                 
@@ -1628,7 +1799,7 @@
             
             // Initialiser les présences pour ce joueur
             sessions.forEach(session => {
-                presences[newPlayer.id][session.id] = 'pa';
+                presences[newPlayer.id][session.id] = 'pst';
             });
             
             updateStats();
@@ -1766,7 +1937,7 @@
             
             // Initialiser les présences pour cette session
             players.forEach(player => {
-                presences[player.id][newSession.id] = 'pa';
+                presences[player.id][newSession.id] = 'pst';
             });
             
             updateStats();
@@ -1845,7 +2016,8 @@
                 players,
                 sessions,
                 presences,
-                customPeriods
+                customPeriods,
+                playerColors
             };
             localStorage.setItem('senior2526Data', JSON.stringify(data));
             alert('Données sauvegardées !');
@@ -1857,7 +2029,8 @@
                 players,
                 sessions,
                 presences,
-                customPeriods
+                customPeriods,
+                playerColors
             };
             localStorage.setItem('senior2526Data', JSON.stringify(data));
         }
@@ -1870,6 +2043,7 @@
                 players = data.players || [];
                 sessions = data.sessions || [];
                 presences = data.presences || {};
+                playerColors = data.playerColors || {};
                 if (data.customPeriods) {
                     customPeriods = data.customPeriods;
                 }
@@ -1896,7 +2070,7 @@
                 
                 sessions.forEach(session => {
                     const status = presences[player.id][session.id];
-                    if (status === 'pa' || status === 'pb' || status === 'pc') {
+                    if (status === 'pst') {
                         present++;
                     }
                 });
@@ -1948,7 +2122,7 @@
                 
                 sessions.forEach(session => {
                     const status = presences[player.id][session.id];
-                    if (status === 'pa' || status === 'pb' || status === 'pc') {
+                    if (status === 'pst') {
                         present++;
                     }
                 });
@@ -1997,7 +2171,7 @@
                 
                 sessions.forEach(session => {
                     const status = presences[player.id][session.id];
-                    if (status === 'pa' || status === 'pb' || status === 'pc') {
+                    if (status === 'pst') {
                         points += 3;
                         present++;
                     } else if (status === 'vac') {
@@ -2030,6 +2204,72 @@
             });
             
             doc.save('competition_senior.pdf');
+        }
+
+        // Gérer les couleurs des joueurs
+        function showPlayerColorsModal() {
+            let colorsHtml = `
+                <h2>🎨 Gérer les Couleurs des Joueurs</h2>
+                <p style="margin-bottom: 20px; color: #666;">Attribuez des couleurs personnalisées pour mettre en évidence certains joueurs dans le tableau.</p>
+                
+                <div style="max-height: 400px; overflow-y: auto;">
+            `;
+            
+            if (players.length === 0) {
+                colorsHtml += '<p>Aucun joueur enregistré.</p>';
+            } else {
+                colorsHtml += '<table class="ranking-table"><thead><tr><th>Joueur</th><th>Couleur actuelle</th><th>Nouvelle couleur</th><th>Actions</th></tr></thead><tbody>';
+                
+                players.forEach((player, index) => {
+                    const currentColor = playerColors[player.id] || '';
+                    const colorPreview = currentColor ? `style="background-color: ${currentColor}; width: 30px; height: 30px; border-radius: 50%; display: inline-block; border: 2px solid #ccc;"` : '';
+                    
+                    colorsHtml += `
+                        <tr>
+                            <td>${player.prenom} ${player.nom}</td>
+                            <td>
+                                ${currentColor ? `<div ${colorPreview}></div>` : '<span style="color: #999;">Aucune</span>'}
+                            </td>
+                            <td>
+                                <input type="color" id="color_${player.id}" value="${currentColor || '#667eea'}" style="width: 50px; height: 30px; border: none; border-radius: 5px; cursor: pointer;">
+                            </td>
+                            <td>
+                                <button class="btn btn-primary" onclick="setPlayerColor(${player.id})" style="margin-right: 10px;">🎨 Appliquer</button>
+                                ${currentColor ? `<button class="btn btn-danger" onclick="removePlayerColor(${player.id})">🗑️ Supprimer</button>` : ''}
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                colorsHtml += '</tbody></table>';
+            }
+            
+            colorsHtml += `
+                </div>
+                <br>
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Fermer</button>
+            `;
+            
+            showModal(colorsHtml);
+        }
+
+        // Appliquer une couleur à un joueur
+        function setPlayerColor(playerId) {
+            const colorInput = document.getElementById(`color_${playerId}`);
+            const selectedColor = colorInput.value;
+            
+            playerColors[playerId] = selectedColor;
+            autoSave();
+            renderPresenceTable();
+            showPlayerColorsModal(); // Recharger la modal
+        }
+
+        // Supprimer la couleur d'un joueur
+        function removePlayerColor(playerId) {
+            delete playerColors[playerId];
+            autoSave();
+            renderPresenceTable();
+            showPlayerColorsModal(); // Recharger la modal
         }
     </script>
 </body>
