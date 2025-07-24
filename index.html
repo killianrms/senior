@@ -554,7 +554,9 @@
                 <h2 class="section-title">Gestion des Présences</h2>
                 <div class="btn-group">
                     <button class="btn btn-primary" onclick="showAddPlayerModal()">➕ Ajouter Joueur</button>
+                    <button class="btn btn-primary" onclick="showManagePlayersModal()">👥 Gérer Joueurs</button>
                     <button class="btn btn-secondary" onclick="showAddDateModal()">📅 Ajouter Date</button>
+                    <button class="btn btn-secondary" onclick="showManageDatesModal()">📅 Gérer Dates</button>
                     <button class="btn btn-success" onclick="saveData()">💾 Sauvegarder</button>
                     <button class="btn btn-warning" onclick="loadData()">📂 Charger</button>
                 </div>
@@ -896,7 +898,7 @@
         function updatePresence(playerId, sessionId, status) {
             presences[playerId][sessionId] = status;
             updateStats();
-            saveData();
+            autoSave();
         }
 
         // Calculer les totaux
@@ -1189,6 +1191,87 @@
             `);
         }
 
+        // Gérer les joueurs (modification/suppression)
+        function showManagePlayersModal() {
+            let playersHtml = '<h2>👥 Gérer les Joueurs</h2><div style="max-height: 400px; overflow-y: auto;">';
+            
+            if (players.length === 0) {
+                playersHtml += '<p>Aucun joueur enregistré.</p>';
+            } else {
+                playersHtml += '<table class="ranking-table"><thead><tr><th>Prénom</th><th>Nom</th><th>Actions</th></tr></thead><tbody>';
+                
+                players.forEach((player, index) => {
+                    playersHtml += `
+                        <tr>
+                            <td>${player.prenom}</td>
+                            <td>${player.nom}</td>
+                            <td>
+                                <button class="btn btn-warning" onclick="editPlayer(${index})" style="margin-right: 10px;">✏️ Modifier</button>
+                                <button class="btn btn-danger" onclick="deletePlayer(${index})">🗑️ Supprimer</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                playersHtml += '</tbody></table>';
+            }
+            
+            playersHtml += '</div><br><button type="button" class="btn btn-secondary" onclick="closeModal()">Fermer</button>';
+            showModal(playersHtml);
+        }
+
+        // Modifier un joueur
+        function editPlayer(index) {
+            const player = players[index];
+            showModal(`
+                <h2>✏️ Modifier le Joueur</h2>
+                <form onsubmit="updatePlayer(event, ${index})">
+                    <div class="form-group">
+                        <label>Prénom:</label>
+                        <input type="text" name="prenom" value="${player.prenom}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nom:</label>
+                        <input type="text" name="nom" value="${player.nom}" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">💾 Sauvegarder</button>
+                    <button type="button" class="btn btn-secondary" onclick="showManagePlayersModal()">⬅️ Retour</button>
+                </form>
+            `);
+        }
+
+        // Mettre à jour un joueur
+        function updatePlayer(event, index) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            
+            players[index].prenom = formData.get('prenom');
+            players[index].nom = formData.get('nom');
+            
+            updateStats();
+            renderPresenceTable();
+            autoSave();
+            showManagePlayersModal();
+        }
+
+        // Supprimer un joueur
+        function deletePlayer(index) {
+            const player = players[index];
+            
+            if (confirm(`Êtes-vous sûr de vouloir supprimer ${player.prenom} ${player.nom} ?\n\nAttention : Toutes ses données de présence seront définitivement perdues !`)) {
+                // Supprimer les données de présence du joueur
+                delete presences[player.id];
+                
+                // Supprimer le joueur de la liste
+                players.splice(index, 1);
+                
+                updateStats();
+                renderPresenceTable();
+                autoSave();
+                showManagePlayersModal();
+            }
+        }
+
         function addPlayer(event) {
             event.preventDefault();
             const formData = new FormData(event.target);
@@ -1208,7 +1291,7 @@
             
             updateStats();
             renderPresenceTable();
-            saveData();
+            autoSave();
             closeModal();
         }
 
@@ -1234,6 +1317,104 @@
             `);
         }
 
+        // Gérer les dates/sessions (modification/suppression)
+        function showManageDatesModal() {
+            let datesHtml = '<h2>📅 Gérer les Dates</h2><div style="max-height: 400px; overflow-y: auto;">';
+            
+            if (sessions.length === 0) {
+                datesHtml += '<p>Aucune session enregistrée.</p>';
+            } else {
+                datesHtml += '<table class="ranking-table"><thead><tr><th>Date</th><th>Type</th><th>Actions</th></tr></thead><tbody>';
+                
+                // Trier les sessions par date pour un affichage chronologique  
+                const sortedSessions = [...sessions].sort((a, b) => a.date.localeCompare(b.date));
+                
+                sortedSessions.forEach((session) => {
+                    const sessionIndex = sessions.findIndex(s => s.id === session.id);
+                    const formattedDate = new Date(session.date).toLocaleDateString('fr-FR');
+                    
+                    datesHtml += `
+                        <tr>
+                            <td>${formattedDate}</td>
+                            <td><span class="badge ${session.type === 'Match' ? 'badge-gold' : 'badge-regulier'}">${session.type}</span></td>
+                            <td>
+                                <button class="btn btn-warning" onclick="editSession(${sessionIndex})" style="margin-right: 10px;">✏️ Modifier</button>
+                                <button class="btn btn-danger" onclick="deleteSession(${sessionIndex})">🗑️ Supprimer</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                datesHtml += '</tbody></table>';
+            }
+            
+            datesHtml += '</div><br><button type="button" class="btn btn-secondary" onclick="closeModal()">Fermer</button>';
+            showModal(datesHtml);
+        }
+
+        // Modifier une session
+        function editSession(index) {
+            const session = sessions[index];
+            showModal(`
+                <h2>✏️ Modifier la Session</h2>
+                <form onsubmit="updateSession(event, ${index})">
+                    <div class="form-group">
+                        <label>Date:</label>
+                        <input type="date" name="date" value="${session.date}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Type:</label>
+                        <select name="type" required>
+                            <option value="Entraînement" ${session.type === 'Entraînement' ? 'selected' : ''}>Entraînement</option>
+                            <option value="Match" ${session.type === 'Match' ? 'selected' : ''}>Match</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">💾 Sauvegarder</button>
+                    <button type="button" class="btn btn-secondary" onclick="showManageDatesModal()">⬅️ Retour</button>
+                </form>
+            `);
+        }
+
+        // Mettre à jour une session
+        function updateSession(event, index) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            
+            sessions[index].date = formData.get('date');
+            sessions[index].type = formData.get('type');
+            
+            // Retrier les sessions par date
+            sessions.sort((a, b) => a.date.localeCompare(b.date));
+            
+            updateStats();
+            renderPresenceTable();
+            autoSave();
+            showManageDatesModal();
+        }
+
+        // Supprimer une session
+        function deleteSession(index) {
+            const session = sessions[index];
+            const formattedDate = new Date(session.date).toLocaleDateString('fr-FR');
+            
+            if (confirm(`Êtes-vous sûr de vouloir supprimer la session du ${formattedDate} (${session.type}) ?\n\nAttention : Toutes les données de présence pour cette session seront définitivement perdues !`)) {
+                // Supprimer les données de présence pour cette session
+                players.forEach(player => {
+                    if (presences[player.id]) {
+                        delete presences[player.id][session.id];
+                    }
+                });
+                
+                // Supprimer la session
+                sessions.splice(index, 1);
+                
+                updateStats();
+                renderPresenceTable();
+                autoSave();
+                showManageDatesModal();
+            }
+        }
+
         function addDate(event) {
             event.preventDefault();
             const formData = new FormData(event.target);
@@ -1253,7 +1434,7 @@
             
             updateStats();
             renderPresenceTable();
-            saveData();
+            autoSave();
             closeModal();
         }
 
@@ -1266,6 +1447,16 @@
             };
             localStorage.setItem('senior2526Data', JSON.stringify(data));
             alert('Données sauvegardées !');
+        }
+
+        // Sauvegarder automatiquement sans alerte
+        function autoSave() {
+            const data = {
+                players,
+                sessions,
+                presences
+            };
+            localStorage.setItem('senior2526Data', JSON.stringify(data));
         }
 
         // Charger les données
