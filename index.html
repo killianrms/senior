@@ -10,41 +10,57 @@
     
     <!-- Firebase SDKs -->
     <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
-        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
-        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
-        
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyATLw5LsQ-8DpDMhoRT899g1M0-9BsMxuI",
-            authDomain: "senior-20e40.firebaseapp.com",
-            projectId: "senior-20e40",
-            storageBucket: "senior-20e40.firebasestorage.app",
-            messagingSenderId: "370305614271",
-            appId: "1:370305614271:web:b43a2c7fc107b410e6e10a",
-            measurementId: "G-JSR540HEDB"
-        };
-        
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        
-        // Make Firebase services available globally
-        window.db = db;
-        window.auth = auth;
-        window.firebaseServices = {
-            collection,
-            doc,
-            setDoc,
-            getDoc,
-            onSnapshot,
-            updateDoc,
-            deleteDoc,
-            signInAnonymously,
-            onAuthStateChanged
-        };
+        try {
+            console.log('🔥 Chargement des modules Firebase...');
+            
+            // Import the functions you need from the SDKs you need
+            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js');
+            const { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, updateDoc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+            const { getAuth, signInAnonymously, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js');
+            
+            console.log('✅ Modules Firebase chargés');
+            
+            // Your web app's Firebase configuration
+            const firebaseConfig = {
+                apiKey: "AIzaSyATLw5LsQ-8DpDMhoRT899g1M0-9BsMxuI",
+                authDomain: "senior-20e40.firebaseapp.com",
+                projectId: "senior-20e40",
+                storageBucket: "senior-20e40.firebasestorage.app",
+                messagingSenderId: "370305614271",
+                appId: "1:370305614271:web:b43a2c7fc107b410e6e10a",
+                measurementId: "G-JSR540HEDB"
+            };
+            
+            console.log('🔄 Initialisation Firebase...');
+            
+            // Initialize Firebase
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            const auth = getAuth(app);
+            
+            console.log('✅ Firebase initialisé');
+            
+            // Make Firebase services available globally
+            window.db = db;
+            window.auth = auth;
+            window.firebaseServices = {
+                collection,
+                doc,
+                setDoc,
+                getDoc,
+                onSnapshot,
+                updateDoc,
+                deleteDoc,
+                signInAnonymously,
+                onAuthStateChanged
+            };
+            
+            console.log('✅ Services Firebase disponibles globalement');
+            
+        } catch (error) {
+            console.error('❌ Erreur chargement Firebase:', error);
+            window.firebaseError = error;
+        }
     </script>
     <style>
         * {
@@ -648,6 +664,7 @@
             <p>Système de Gestion des Présences</p>
             <div id="firebaseStatus" style="margin-top: 10px; font-size: 14px; opacity: 0.8;">
                 <span id="statusIndicator">🔄</span> <span id="statusText">Connexion Firebase...</span>
+                <button id="retryFirebase" style="margin-left: 10px; padding: 2px 8px; font-size: 12px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; display: none;" onclick="retryFirebaseConnection()">🔄 Retry</button>
             </div>
         </div>
 
@@ -914,8 +931,19 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Attendre que Firebase soit chargé
             setTimeout(() => {
-                initializeFirebase();
-            }, 1000);
+                if (window.firebaseServices) {
+                    initializeFirebase();
+                } else {
+                    console.error('Firebase services non chargés');
+                    updateFirebaseStatus('❌', 'Erreur chargement Firebase', '#dc3545');
+                    // Fallback immédiat
+                    loadData();
+                    initializeData();
+                    updateStats();
+                    updatePeriodButtons();
+                    renderPresenceTable();
+                }
+            }, 2000); // Augmenté à 2 secondes
         });
         
         // Initialiser Firebase et charger les données
@@ -923,10 +951,22 @@
             updateFirebaseStatus('🔄', 'Connexion Firebase...', '#ffc107');
             
             try {
+                // Vérifier que tous les services sont disponibles
+                if (!window.auth || !window.db || !window.firebaseServices) {
+                    throw new Error('Services Firebase non chargés');
+                }
+                
                 const { signInAnonymously, onAuthStateChanged } = window.firebaseServices;
                 
-                // Connexion anonyme
-                await signInAnonymously(window.auth);
+                console.log('🔄 Tentative de connexion Firebase...');
+                
+                // Connexion anonyme avec timeout
+                const authPromise = signInAnonymously(window.auth);
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout authentification')), 10000)
+                );
+                
+                await Promise.race([authPromise, timeoutPromise]);
                 console.log('🔥 Firebase initialisé avec succès');
                 
                 // Écouter les changements d'authentification
@@ -942,32 +982,61 @@
                         if (saveBtn) {
                             saveBtn.innerHTML = '🔥 Sauvegarder (Firebase)';
                         }
+                    } else {
+                        console.log('Utilisateur déconnecté');
+                        updateFirebaseStatus('❌', 'Déconnecté - Mode local', '#dc3545');
+                        loadDataFallback();
                     }
                 });
                 
             } catch (error) {
-                console.error('❌ Erreur Firebase:', error);
-                updateFirebaseStatus('❌', 'Mode hors ligne (localStorage)', '#dc3545');
+                console.error('❌ Erreur Firebase détaillée:', error.message, error);
                 
-                // Fallback sur localStorage en cas d'erreur
-                loadData();
-                initializeData();
-                updateStats();
-                updatePeriodButtons();
-                renderPresenceTable();
+                let errorMessage = 'Mode hors ligne (localStorage)';
+                if (error.message.includes('auth')) {
+                    errorMessage = 'Erreur authentification - Mode local';
+                } else if (error.message.includes('network')) {
+                    errorMessage = 'Pas de connexion - Mode local';
+                } else if (error.message.includes('chargés')) {
+                    errorMessage = 'Firebase non chargé - Mode local';
+                }
+                
+                updateFirebaseStatus('❌', errorMessage, '#dc3545');
+                loadDataFallback();
             }
+        }
+        
+        // Fonction fallback pour charger les données en mode local
+        function loadDataFallback() {
+            loadData();
+            initializeData();
+            updateStats();
+            updatePeriodButtons();
+            renderPresenceTable();
         }
         
         // Mettre à jour le statut Firebase dans l'interface
         function updateFirebaseStatus(icon, text, color) {
             const statusIndicator = document.getElementById('statusIndicator');
             const statusText = document.getElementById('statusText');
+            const retryBtn = document.getElementById('retryFirebase');
             
             if (statusIndicator && statusText) {
                 statusIndicator.textContent = icon;
                 statusText.textContent = text;
                 statusText.style.color = color;
+                
+                // Afficher le bouton retry si erreur
+                if (retryBtn) {
+                    retryBtn.style.display = icon === '❌' ? 'inline-block' : 'none';
+                }
             }
+        }
+        
+        // Retry connexion Firebase
+        function retryFirebaseConnection() {
+            console.log('🔄 Nouvelle tentative de connexion Firebase...');
+            initializeFirebase();
         }
 
         // Fonction pour afficher les onglets
