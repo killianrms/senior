@@ -7,6 +7,45 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyATLw5LsQ-8DpDMhoRT899g1M0-9BsMxuI",
+            authDomain: "senior-20e40.firebaseapp.com",
+            projectId: "senior-20e40",
+            storageBucket: "senior-20e40.firebasestorage.app",
+            messagingSenderId: "370305614271",
+            appId: "1:370305614271:web:b43a2c7fc107b410e6e10a",
+            measurementId: "G-JSR540HEDB"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        // Make Firebase services available globally
+        window.db = db;
+        window.auth = auth;
+        window.firebaseServices = {
+            collection,
+            doc,
+            setDoc,
+            getDoc,
+            onSnapshot,
+            updateDoc,
+            deleteDoc,
+            signInAnonymously,
+            onAuthStateChanged
+        };
+    </script>
     <style>
         * {
             margin: 0;
@@ -607,6 +646,9 @@
         <div class="header">
             <h1>⚽ Senior</h1>
             <p>Système de Gestion des Présences</p>
+            <div id="firebaseStatus" style="margin-top: 10px; font-size: 14px; opacity: 0.8;">
+                <span id="statusIndicator">🔄</span> <span id="statusText">Connexion Firebase...</span>
+            </div>
         </div>
 
         <div class="nav-tabs">
@@ -623,7 +665,7 @@
                     <button class="btn btn-primary" onclick="showManagePlayersModal()">👥 Gérer Joueurs</button>
                     <button class="btn btn-secondary" onclick="showManageDatesModal()">📅 Gérer Dates</button>
                     <button class="btn btn-warning" onclick="showManagePeriodsModal()">⏱️ Gérer Périodes</button>
-                    <button class="btn btn-success" onclick="saveData()">💾 Sauvegarder</button>
+                    <button class="btn btn-success" onclick="saveData()" id="saveBtn">💾 Sauvegarder</button>
                 </div>
             </div>
 
@@ -851,6 +893,8 @@
         let presences = {};
         let currentPeriod = 'all';
         let currentSort = 'default';
+        let isFirebaseInitialized = false;
+        let unsubscribeListeners = [];
         let customPeriods = [
             { id: 'all', name: 'Toute la saison', startDate: null, endDate: null },
             { id: '2024', name: 'Août-Déc 2024', startDate: '2024-08-01', endDate: '2024-12-31' },
@@ -868,12 +912,63 @@
 
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
-            loadData();
-            initializeData();
-            updateStats();
-            updatePeriodButtons();
-            renderPresenceTable();
+            // Attendre que Firebase soit chargé
+            setTimeout(() => {
+                initializeFirebase();
+            }, 1000);
         });
+        
+        // Initialiser Firebase et charger les données
+        async function initializeFirebase() {
+            updateFirebaseStatus('🔄', 'Connexion Firebase...', '#ffc107');
+            
+            try {
+                const { signInAnonymously, onAuthStateChanged } = window.firebaseServices;
+                
+                // Connexion anonyme
+                await signInAnonymously(window.auth);
+                console.log('🔥 Firebase initialisé avec succès');
+                
+                // Écouter les changements d'authentification
+                onAuthStateChanged(window.auth, (user) => {
+                    if (user) {
+                        console.log('👤 Utilisateur connecté:', user.uid);
+                        isFirebaseInitialized = true;
+                        updateFirebaseStatus('🔥', 'Connecté - Synchronisation active', '#28a745');
+                        loadDataFromFirebase();
+                        
+                        // Mettre à jour le bouton de sauvegarde
+                        const saveBtn = document.getElementById('saveBtn');
+                        if (saveBtn) {
+                            saveBtn.innerHTML = '🔥 Sauvegarder (Firebase)';
+                        }
+                    }
+                });
+                
+            } catch (error) {
+                console.error('❌ Erreur Firebase:', error);
+                updateFirebaseStatus('❌', 'Mode hors ligne (localStorage)', '#dc3545');
+                
+                // Fallback sur localStorage en cas d'erreur
+                loadData();
+                initializeData();
+                updateStats();
+                updatePeriodButtons();
+                renderPresenceTable();
+            }
+        }
+        
+        // Mettre à jour le statut Firebase dans l'interface
+        function updateFirebaseStatus(icon, text, color) {
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            if (statusIndicator && statusText) {
+                statusIndicator.textContent = icon;
+                statusText.textContent = text;
+                statusText.style.color = color;
+            }
+        }
 
         // Fonction pour afficher les onglets
         function showTab(tabName) {
@@ -1987,30 +2082,117 @@
         }
 
 
-        // Sauvegarder les données
-        function saveData() {
-            const data = {
-                players,
-                sessions,
-                presences,
-                customPeriods
-            };
-            localStorage.setItem('senior2526Data', JSON.stringify(data));
-            alert('Données sauvegardées !');
+        // Sauvegarder les données sur Firebase
+        async function saveData() {
+            if (isFirebaseInitialized) {
+                await saveDataToFirebase();
+                alert('Données sauvegardées sur Firebase ! 🔥');
+            } else {
+                // Fallback localStorage
+                const data = {
+                    players,
+                    sessions,
+                    presences,
+                    customPeriods
+                };
+                localStorage.setItem('senior2526Data', JSON.stringify(data));
+                alert('Données sauvegardées localement !');
+            }
         }
 
         // Sauvegarder automatiquement sans alerte
-        function autoSave() {
-            const data = {
-                players,
-                sessions,
-                presences,
-                customPeriods
-            };
-            localStorage.setItem('senior2526Data', JSON.stringify(data));
+        async function autoSave() {
+            if (isFirebaseInitialized) {
+                await saveDataToFirebase();
+            } else {
+                // Fallback localStorage
+                const data = {
+                    players,
+                    sessions,
+                    presences,
+                    customPeriods
+                };
+                localStorage.setItem('senior2526Data', JSON.stringify(data));
+            }
         }
-
-        // Charger les données
+        
+        // Sauvegarder sur Firebase
+        async function saveDataToFirebase() {
+            try {
+                const { doc, setDoc } = window.firebaseServices;
+                const dataRef = doc(window.db, 'seniorData', 'main');
+                
+                const data = {
+                    players,
+                    sessions,
+                    presences,
+                    customPeriods,
+                    lastUpdated: new Date().toISOString()
+                };
+                
+                await setDoc(dataRef, data);
+                console.log('✅ Données sauvegardées sur Firebase');
+            } catch (error) {
+                console.error('❌ Erreur sauvegarde Firebase:', error);
+            }
+        }
+        
+        // Charger les données depuis Firebase
+        async function loadDataFromFirebase() {
+            try {
+                const { doc, getDoc, onSnapshot } = window.firebaseServices;
+                const dataRef = doc(window.db, 'seniorData', 'main');
+                
+                // Écouter les changements en temps réel
+                const unsubscribe = onSnapshot(dataRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        console.log('🔄 Données mises à jour depuis Firebase');
+                        
+                        // Vérifier si les données ont changé pour éviter les mises à jour inutiles
+                        const hasChanged = JSON.stringify({players, sessions, presences, customPeriods}) !== 
+                                         JSON.stringify({players: data.players || [], sessions: data.sessions || [], presences: data.presences || {}, customPeriods: data.customPeriods});
+                        
+                        if (hasChanged) {
+                            players = data.players || [];
+                            sessions = data.sessions || [];
+                            presences = data.presences || {};
+                            if (data.customPeriods) {
+                                customPeriods = data.customPeriods;
+                            }
+                            
+                            // Mettre à jour l'interface
+                            updateStats();
+                            updatePeriodButtons();
+                            renderPresenceTable();
+                            
+                            // Afficher un indicateur de synchronisation seulement si les données ont changé
+                            showSyncIndicator();
+                        }
+                    } else {
+                        console.log('📦 Aucune donnée Firebase, initialisation...');
+                        initializeData();
+                        updateStats();
+                        updatePeriodButtons();
+                        renderPresenceTable();
+                        saveDataToFirebase(); // Créer les données initiales
+                    }
+                });
+                
+                unsubscribeListeners.push(unsubscribe);
+                
+            } catch (error) {
+                console.error('❌ Erreur chargement Firebase:', error);
+                // Fallback sur localStorage
+                loadData();
+                initializeData();
+                updateStats();
+                updatePeriodButtons();
+                renderPresenceTable();
+            }
+        }
+        
+        // Charger les données depuis localStorage (fallback)
         function loadData() {
             const savedData = localStorage.getItem('senior2526Data');
             if (savedData) {
@@ -2022,6 +2204,50 @@
                     customPeriods = data.customPeriods;
                 }
             }
+        }
+        
+        // Afficher un indicateur de synchronisation
+        function showSyncIndicator() {
+            // Créer un indicateur temporaire
+            const indicator = document.createElement('div');
+            indicator.innerHTML = '🔄 Synchronisé';
+            indicator.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #28a745;
+                color: white;
+                padding: 10px 15px;
+                border-radius: 20px;
+                font-size: 14px;
+                font-weight: 600;
+                z-index: 1000;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                animation: fadeInOut 2s ease-in-out;
+            `;
+            
+            // Ajouter l'animation CSS
+            if (!document.getElementById('syncAnimation')) {
+                const style = document.createElement('style');
+                style.id = 'syncAnimation';
+                style.textContent = `
+                    @keyframes fadeInOut {
+                        0% { opacity: 0; transform: translateY(-20px); }
+                        50% { opacity: 1; transform: translateY(0); }
+                        100% { opacity: 0; transform: translateY(-20px); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            document.body.appendChild(indicator);
+            
+            // Supprimer après 2 secondes
+            setTimeout(() => {
+                if (indicator.parentNode) {
+                    indicator.parentNode.removeChild(indicator);
+                }
+            }, 2000);
         }
 
         // Export PDF functions
