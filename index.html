@@ -360,6 +360,17 @@
             color: white;
             border: 2px solid #1976d2;
         }
+        
+        /* Styles pour les options du menu déroulant */
+        option.opt-abp { background-color: #ffcdd2; color: #d32f2f; }
+        option.opt-absp { background-color: #d32f2f; color: white; }
+        option.opt-bls { background-color: #ffcc80; color: #f57c00; }
+        option.opt-vac { background-color: #f8bbd9; color: #c2185b; }
+        option.opt-pst { background-color: #c8e6c9; color: #2e7d32; }
+        option.opt-ca { background-color: #1976d2; color: white; }
+        option.opt-cb { background-color: #42a5f5; color: white; }
+        option.opt-cc { background-color: #90caf9; color: #1976d2; }
+        option.opt-ret { background-color: #fff176; color: #f57f17; }
 
         .ranking-table {
             width: 100%;
@@ -602,7 +613,6 @@
                     <button class="btn btn-primary" onclick="showManagePlayersModal()">👥 Gérer Joueurs</button>
                     <button class="btn btn-secondary" onclick="showManageDatesModal()">📅 Gérer Dates</button>
                     <button class="btn btn-warning" onclick="showManagePeriodsModal()">⏱️ Gérer Périodes</button>
-                    <button class="btn btn-warning" onclick="showPlayerColorsModal()">🎨 Couleurs Joueurs</button>
                     <button class="btn btn-success" onclick="saveData()">💾 Sauvegarder</button>
                 </div>
             </div>
@@ -673,14 +683,15 @@
             <div style="background: #f8f9ff; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
                 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-bottom: 15px;">
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label for="searchInput">🔍 Rechercher un joueur (prénom/nom) ou une date (JJ/MM/AAAA):</label>
-                        <input type="text" id="searchInput" placeholder="Ex: Lucas, Martin, 15/12/2024..." style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;" onkeyup="performSearch()">
+                        <label for="searchInput">🔍 Rechercher un joueur (prénom/nom):</label>
+                        <input type="text" id="searchInput" placeholder="Ex: Lucas, Martin..." style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;" onkeyup="performSearch()">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label for="sortSelect">📋 Trier par:</label>
                         <select id="sortSelect" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;" onchange="sortPlayers()">
                             <option value="default">Ordre par défaut</option>
-                            <option value="alphabetical">Ordre alphabétique (prénom)</option>
+                            <option value="alphabetical-prenom">Ordre alphabétique (prénom)</option>
+                            <option value="alphabetical-nom">Ordre alphabétique (nom)</option>
                             <option value="recent">Plus récent au plus ancien</option>
                         </select>
                     </div>
@@ -821,7 +832,6 @@
         let players = [];
         let sessions = [];
         let presences = {};
-        let playerColors = {};
         let currentPeriod = 'all';
         let currentSort = 'default';
         let customPeriods = [
@@ -1154,21 +1164,22 @@
                     };
                     
                     const options = [
-                        { value: 'abp', text: 'AbP', class: 'status-abp' },
-                        { value: 'absp', text: 'AbSP', class: 'status-absp' },
-                        { value: 'bls', text: 'BLS', class: 'status-bls' },
-                        { value: 'vac', text: 'VAC', class: 'status-vac' },
-                        { value: 'pst', text: 'PST', class: 'status-pst' },
-                        { value: 'ca', text: 'Ca', class: 'status-ca' },
-                        { value: 'cb', text: 'Cb', class: 'status-cb' },
-                        { value: 'cc', text: 'Cc', class: 'status-cc' },
-                        { value: 'ret', text: 'RET', class: 'status-ret' }
+                        { value: 'pst', text: 'PST', class: 'opt-pst' },
+                        { value: 'abp', text: 'AbP', class: 'opt-abp' },
+                        { value: 'absp', text: 'AbSP', class: 'opt-absp' },
+                        { value: 'bls', text: 'BLS', class: 'opt-bls' },
+                        { value: 'vac', text: 'VAC', class: 'opt-vac' },
+                        { value: 'ca', text: 'Ca', class: 'opt-ca' },
+                        { value: 'cb', text: 'Cb', class: 'opt-cb' },
+                        { value: 'cc', text: 'Cc', class: 'opt-cc' },
+                        { value: 'ret', text: 'RET', class: 'opt-ret' }
                     ];
                     
                     options.forEach(opt => {
                         const option = document.createElement('option');
                         option.value = opt.value;
                         option.textContent = opt.text;
+                        option.className = opt.class;
                         select.appendChild(option);
                     });
                     
@@ -1198,8 +1209,11 @@
             let sortedPlayers = [...players];
             
             switch(currentSort) {
-                case 'alphabetical':
+                case 'alphabetical-prenom':
                     sortedPlayers.sort((a, b) => a.prenom.localeCompare(b.prenom));
+                    break;
+                case 'alphabetical-nom':
+                    sortedPlayers.sort((a, b) => a.nom.localeCompare(b.nom));
                     break;
                 case 'recent':
                     // Trier par date d'ajout (ID décroissant)
@@ -1223,128 +1237,10 @@
                 return;
             }
             
-            // Vérifier si c'est une recherche de date (format JJ/MM/AAAA ou variantes)
-            const datePattern = /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/;
-            const dateMatch = searchTerm.match(datePattern);
-            
-            if (dateMatch) {
-                // Recherche de date
-                searchByDate(searchTerm, dateMatch);
-            } else {
-                // Recherche de joueur
-                searchByPlayer(searchTerm);
-            }
+            // Recherche de joueur uniquement
+            searchByPlayer(searchTerm);
         }
 
-        // Recherche par date - garde tous les joueurs visibles mais met en évidence la date
-        function searchByDate(searchTerm, dateMatch) {
-            const headerRow = document.getElementById('headerRow');
-            const presenceBody = document.getElementById('presenceBody');
-            
-            // Filtrer les sessions selon la période actuelle
-            let filteredSessions = sessions;
-            const currentPeriodObj = customPeriods.find(p => p.id === currentPeriod);
-            
-            if (currentPeriodObj && currentPeriodObj.startDate && currentPeriodObj.endDate) {
-                filteredSessions = sessions.filter(s => 
-                    s.date >= currentPeriodObj.startDate && s.date <= currentPeriodObj.endDate
-                );
-            }
-            
-            // Réinitialiser l'en-tête
-            headerRow.innerHTML = '<th>Prénom</th><th>Nom</th>';
-            
-            // Construire la date recherchée pour comparaison
-            let day = parseInt(dateMatch[1]);
-            let month = parseInt(dateMatch[2]);
-            let year = parseInt(dateMatch[3]);
-            
-            // Ajuster l'année si elle est à 2 chiffres
-            if (year < 100) {
-                year += year < 50 ? 2000 : 1900;
-            }
-            
-            // Ajouter les colonnes de dates avec mise en évidence
-            filteredSessions.forEach(session => {
-                const th = document.createElement('th');
-                const sessionDate = new Date(session.date);
-                const isMatch = sessionDate.getDate() === day && 
-                               (sessionDate.getMonth() + 1) === month && 
-                               sessionDate.getFullYear() === year;
-                
-                th.innerHTML = `${sessionDate.getDate()}/${sessionDate.getMonth() + 1}<br><small>${session.type}</small>`;
-                th.style.whiteSpace = 'nowrap';
-                
-                // Mettre en évidence la date correspondante
-                if (isMatch) {
-                    th.style.backgroundColor = '#ffc107';
-                    th.style.color = '#333';
-                    th.style.fontWeight = 'bold';
-                    th.style.transform = 'scale(1.05)';
-                    th.title = 'Date trouvée !';
-                }
-                
-                headerRow.appendChild(th);
-            });
-            
-            // Rendre toutes les lignes des joueurs (pas de filtrage)
-            presenceBody.innerHTML = '';
-            const sortedPlayers = getSortedPlayers();
-            sortedPlayers.forEach(player => {
-                const row = document.createElement('tr');
-                
-                // Appliquer une couleur personnalisée si définie
-                const customColor = playerColors[player.id];
-                if (customColor) {
-                    row.style.backgroundColor = customColor + '20';
-                    row.style.borderLeft = `4px solid ${customColor}`;
-                }
-                
-                row.innerHTML = `<td>${player.prenom}</td><td>${player.nom}</td>`;
-                
-                filteredSessions.forEach(session => {
-                    const td = document.createElement('td');
-                    const status = presences[player.id][session.id] || 'pst';
-                    
-                    // Ajouter une classe spéciale pour les matchs
-                    if (session.type === 'Match') {
-                        td.className = 'match-session';
-                    }
-                    
-                    const select = document.createElement('select');
-                    select.className = `presence-cell status-${status}`;
-                    select.value = status;
-                    select.onchange = function() {
-                        updatePresence(player.id, session.id, this.value);
-                        this.className = `presence-cell status-${this.value}`;
-                    };
-                    
-                    const options = [
-                        { value: 'abp', text: 'AbP', class: 'status-abp' },
-                        { value: 'absp', text: 'AbSP', class: 'status-absp' },
-                        { value: 'bls', text: 'BLS', class: 'status-bls' },
-                        { value: 'vac', text: 'VAC', class: 'status-vac' },
-                        { value: 'pst', text: 'PST', class: 'status-pst' },
-                        { value: 'ca', text: 'Ca', class: 'status-ca' },
-                        { value: 'cb', text: 'Cb', class: 'status-cb' },
-                        { value: 'cc', text: 'Cc', class: 'status-cc' },
-                        { value: 'ret', text: 'RET', class: 'status-ret' }
-                    ];
-                    
-                    options.forEach(opt => {
-                        const option = document.createElement('option');
-                        option.value = opt.value;
-                        option.textContent = opt.text;
-                        select.appendChild(option);
-                    });
-                    
-                    td.appendChild(select);
-                    row.appendChild(td);
-                });
-                
-                presenceBody.appendChild(row);
-            });
-        }
 
         // Recherche par joueur - filtre les joueurs mais garde toutes les dates
         function searchByPlayer(searchTerm) {
@@ -1385,12 +1281,6 @@
             filteredPlayers.forEach(player => {
                 const row = document.createElement('tr');
                 
-                // Appliquer une couleur personnalisée si définie
-                const customColor = playerColors[player.id];
-                if (customColor) {
-                    row.style.backgroundColor = customColor + '20';
-                    row.style.borderLeft = `4px solid ${customColor}`;
-                }
                 
                 // Mettre en évidence le texte correspondant
                 const prenomHighlighted = highlightSearchTerm(player.prenom, searchTerm);
@@ -1416,21 +1306,22 @@
                     };
                     
                     const options = [
-                        { value: 'abp', text: 'AbP', class: 'status-abp' },
-                        { value: 'absp', text: 'AbSP', class: 'status-absp' },
-                        { value: 'bls', text: 'BLS', class: 'status-bls' },
-                        { value: 'vac', text: 'VAC', class: 'status-vac' },
-                        { value: 'pst', text: 'PST', class: 'status-pst' },
-                        { value: 'ca', text: 'Ca', class: 'status-ca' },
-                        { value: 'cb', text: 'Cb', class: 'status-cb' },
-                        { value: 'cc', text: 'Cc', class: 'status-cc' },
-                        { value: 'ret', text: 'RET', class: 'status-ret' }
+                        { value: 'pst', text: 'PST', class: 'opt-pst' },
+                        { value: 'abp', text: 'AbP', class: 'opt-abp' },
+                        { value: 'absp', text: 'AbSP', class: 'opt-absp' },
+                        { value: 'bls', text: 'BLS', class: 'opt-bls' },
+                        { value: 'vac', text: 'VAC', class: 'opt-vac' },
+                        { value: 'ca', text: 'Ca', class: 'opt-ca' },
+                        { value: 'cb', text: 'Cb', class: 'opt-cb' },
+                        { value: 'cc', text: 'Cc', class: 'opt-cc' },
+                        { value: 'ret', text: 'RET', class: 'opt-ret' }
                     ];
                     
                     options.forEach(opt => {
                         const option = document.createElement('option');
                         option.value = opt.value;
                         option.textContent = opt.text;
+                        option.className = opt.class;
                         select.appendChild(option);
                     });
                     
@@ -2016,8 +1907,7 @@
                 players,
                 sessions,
                 presences,
-                customPeriods,
-                playerColors
+                customPeriods
             };
             localStorage.setItem('senior2526Data', JSON.stringify(data));
             alert('Données sauvegardées !');
@@ -2029,8 +1919,7 @@
                 players,
                 sessions,
                 presences,
-                customPeriods,
-                playerColors
+                customPeriods
             };
             localStorage.setItem('senior2526Data', JSON.stringify(data));
         }
@@ -2043,7 +1932,6 @@
                 players = data.players || [];
                 sessions = data.sessions || [];
                 presences = data.presences || {};
-                playerColors = data.playerColors || {};
                 if (data.customPeriods) {
                     customPeriods = data.customPeriods;
                 }
@@ -2206,71 +2094,6 @@
             doc.save('competition_senior.pdf');
         }
 
-        // Gérer les couleurs des joueurs
-        function showPlayerColorsModal() {
-            let colorsHtml = `
-                <h2>🎨 Gérer les Couleurs des Joueurs</h2>
-                <p style="margin-bottom: 20px; color: #666;">Attribuez des couleurs personnalisées pour mettre en évidence certains joueurs dans le tableau.</p>
-                
-                <div style="max-height: 400px; overflow-y: auto;">
-            `;
-            
-            if (players.length === 0) {
-                colorsHtml += '<p>Aucun joueur enregistré.</p>';
-            } else {
-                colorsHtml += '<table class="ranking-table"><thead><tr><th>Joueur</th><th>Couleur actuelle</th><th>Nouvelle couleur</th><th>Actions</th></tr></thead><tbody>';
-                
-                players.forEach((player, index) => {
-                    const currentColor = playerColors[player.id] || '';
-                    const colorPreview = currentColor ? `style="background-color: ${currentColor}; width: 30px; height: 30px; border-radius: 50%; display: inline-block; border: 2px solid #ccc;"` : '';
-                    
-                    colorsHtml += `
-                        <tr>
-                            <td>${player.prenom} ${player.nom}</td>
-                            <td>
-                                ${currentColor ? `<div ${colorPreview}></div>` : '<span style="color: #999;">Aucune</span>'}
-                            </td>
-                            <td>
-                                <input type="color" id="color_${player.id}" value="${currentColor || '#667eea'}" style="width: 50px; height: 30px; border: none; border-radius: 5px; cursor: pointer;">
-                            </td>
-                            <td>
-                                <button class="btn btn-primary" onclick="setPlayerColor(${player.id})" style="margin-right: 10px;">🎨 Appliquer</button>
-                                ${currentColor ? `<button class="btn btn-danger" onclick="removePlayerColor(${player.id})">🗑️ Supprimer</button>` : ''}
-                            </td>
-                        </tr>
-                    `;
-                });
-                
-                colorsHtml += '</tbody></table>';
-            }
-            
-            colorsHtml += `
-                </div>
-                <br>
-                <button type="button" class="btn btn-secondary" onclick="closeModal()">Fermer</button>
-            `;
-            
-            showModal(colorsHtml);
-        }
-
-        // Appliquer une couleur à un joueur
-        function setPlayerColor(playerId) {
-            const colorInput = document.getElementById(`color_${playerId}`);
-            const selectedColor = colorInput.value;
-            
-            playerColors[playerId] = selectedColor;
-            autoSave();
-            renderPresenceTable();
-            showPlayerColorsModal(); // Recharger la modal
-        }
-
-        // Supprimer la couleur d'un joueur
-        function removePlayerColor(playerId) {
-            delete playerColors[playerId];
-            autoSave();
-            renderPresenceTable();
-            showPlayerColorsModal(); // Recharger la modal
-        }
     </script>
 </body>
 </html>
