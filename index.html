@@ -457,6 +457,16 @@
             background: #007bff;
             color: white;
         }
+        
+        .badge-ponctuel {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .badge-parfait {
+            background: #28a745;
+            color: white;
+        }
 
         .form-group {
             margin-bottom: 20px;
@@ -779,23 +789,29 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-number" id="monthWinner">-</div>
-                    <div class="stat-label">Champion du Mois</div>
+                    <div class="stat-label">Meilleur Taux Assiduité</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number" id="maxPoints">0</div>
-                    <div class="stat-label">Points Maximum</div>
+                    <div class="stat-number" id="bestAttendanceRate">0%</div>
+                    <div class="stat-label">Taux le Plus Élevé</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="averageAttendance">0%</div>
+                    <div class="stat-label">Moyenne Générale</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number" id="perfectPlayers">0</div>
-                    <div class="stat-label">Joueurs Parfaits</div>
+                    <div class="stat-label">Joueurs Sans Absence</div>
                 </div>
             </div>
 
             <div class="charts-container">
                 <div class="chart-card">
+                    <div class="chart-title">Classement par Taux d'Assiduité</div>
                     <canvas id="pointsChart"></canvas>
                 </div>
                 <div class="chart-card">
+                    <div class="chart-title">Répartition des Statuts</div>
                     <canvas id="badgesChart"></canvas>
                 </div>
             </div>
@@ -806,10 +822,11 @@
                         <th>Rang</th>
                         <th>Prénom</th>
                         <th>Nom</th>
-                        <th>Points Total</th>
+                        <th>Taux Assiduité</th>
                         <th>Présences</th>
-                        <th>Repos</th>
+                        <th>Vacances/Congés</th>
                         <th>Absences</th>
+                        <th>Retards</th>
                         <th>Badges</th>
                     </tr>
                 </thead>
@@ -1426,37 +1443,56 @@
                 let present = 0;
                 let repos = 0;
                 let absent = 0;
-                let points = 0;
+                let retards = 0;
+                let totalSessions = 0;
                 
                 sessions.forEach(session => {
                     const status = presences[player.id][session.id];
+                    totalSessions++;
+                    
                     if (status === 'pst') {
                         present++;
-                        points += 3;
                     } else if (status === 'vac') {
                         repos++;
-                        points += 1;
                     } else if (status === 'abp' || status === 'absp' || status === 'bls') {
                         absent++;
                     } else if (status === 'ca' || status === 'cb' || status === 'cc') {
                         present++;
-                        points += 3;
+                    } else if (status === 'ret') {
+                        retards++;
+                        present++; // Un retard compte comme une présence
                     }
                 });
+                
+                // Calcul du taux d'assiduité (présences + retards) / (total - vacances)
+                const effectiveSessions = totalSessions - repos;
+                const attendanceRate = effectiveSessions > 0 ? Math.round(((present) / effectiveSessions) * 100) : 0;
                 
                 return {
                     ...player,
                     present,
                     repos,
                     absent,
-                    points
+                    retards,
+                    attendanceRate,
+                    totalSessions
                 };
-            }).sort((a, b) => b.points - a.points);
+            }).sort((a, b) => {
+                // Trier d'abord par taux d'assiduité, puis par nombre de présences
+                if (b.attendanceRate === a.attendanceRate) {
+                    return b.present - a.present;
+                }
+                return b.attendanceRate - a.attendanceRate;
+            });
             
             // Mettre à jour les stats
             if (competitionData.length > 0) {
                 document.getElementById('monthWinner').textContent = competitionData[0].prenom + ' ' + competitionData[0].nom;
-                document.getElementById('maxPoints').textContent = competitionData[0].points;
+                document.getElementById('bestAttendanceRate').textContent = competitionData[0].attendanceRate + '%';
+                
+                // Calcul de la moyenne générale
+                const averageRate = Math.round(competitionData.reduce((sum, p) => sum + p.attendanceRate, 0) / competitionData.length);
+                document.getElementById('averageAttendance').textContent = averageRate + '%';
             }
             
             const perfectPlayers = competitionData.filter(p => p.absent === 0).length;
@@ -1474,19 +1510,27 @@
                 else if (index === 2) rankDisplay = '🥉 3';
                 
                 const badges = [];
-                if (index === 0) badges.push('<span class="badge badge-gold">Champion</span>');
-                if (index === 1) badges.push('<span class="badge badge-silver">Vice-Champion</span>');
-                if (index === 2) badges.push('<span class="badge badge-bronze">3ème</span>');
-                if (player.absent === 0) badges.push('<span class="badge badge-assidu">Parfait</span>');
+                if (index === 0) badges.push('<span class="badge badge-gold">🏆 Champion</span>');
+                if (index === 1) badges.push('<span class="badge badge-silver">🥈 Vice-Champion</span>');
+                if (index === 2) badges.push('<span class="badge badge-bronze">🥉 3ème</span>');
+                if (player.absent === 0) badges.push('<span class="badge badge-assidu">⭐ Sans Absence</span>');
+                if (player.attendanceRate === 100) badges.push('<span class="badge badge-assidu">💯 Parfait</span>');
+                if (player.retards === 0 && player.present > 0) badges.push('<span class="badge badge-regulier">⏰ Ponctuel</span>');
                 
                 row.innerHTML = `
                     <td><span class="rank-medal rank-${index + 1}">${rankDisplay}</span></td>
                     <td>${player.prenom}</td>
                     <td>${player.nom}</td>
-                    <td><strong>${player.points}</strong></td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${player.attendanceRate}%"></div>
+                        </div>
+                        <strong>${player.attendanceRate}%</strong>
+                    </td>
                     <td>${player.present}</td>
                     <td>${player.repos}</td>
                     <td>${player.absent}</td>
+                    <td>${player.retards}</td>
                     <td>${badges.join(' ')}</td>
                 `;
                 competitionBody.appendChild(row);
@@ -1555,53 +1599,95 @@
 
         // Mettre à jour les graphiques de compétition
         function updateCompetitionCharts(data) {
-            // Points Chart
+            // Taux d'Assiduité Chart
             const ctx1 = document.getElementById('pointsChart').getContext('2d');
             const top10 = data.slice(0, 10);
             
             new Chart(ctx1, {
-                type: 'horizontalBar',
+                type: 'bar',
                 data: {
                     labels: top10.map(p => p.prenom),
                     datasets: [{
-                        label: 'Points',
-                        data: top10.map(p => p.points),
-                        backgroundColor: [
-                            '#FFD700', '#C0C0C0', '#CD7F32',
-                            ...Array(7).fill('rgba(102, 126, 234, 0.8)')
-                        ]
+                        label: 'Taux d\'Assiduité (%)',
+                        data: top10.map(p => p.attendanceRate),
+                        backgroundColor: top10.map((_, i) => {
+                            if (i === 0) return '#FFD700';
+                            if (i === 1) return '#C0C0C0';
+                            if (i === 2) return '#CD7F32';
+                            return 'rgba(102, 126, 234, 0.8)';
+                        }),
+                        borderColor: top10.map((_, i) => {
+                            if (i === 0) return '#DAA520';
+                            if (i === 1) return '#A0A0A0';
+                            if (i === 2) return '#B8860B';
+                            return 'rgba(102, 126, 234, 1)';
+                        }),
+                        borderWidth: 2
                     }]
                 },
                 options: {
                     responsive: true,
                     scales: {
-                        x: {
-                            beginAtZero: true
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true
+                        },
+                        title: {
+                            display: true,
+                            text: 'Top 10 - Taux d\'Assiduité'
                         }
                     }
                 }
             });
             
-            // Badges Chart
+            // Répartition des Statuts Chart
             const ctx2 = document.getElementById('badgesChart').getContext('2d');
-            const badgeCounts = {
-                'Champions': data.filter((_, i) => i === 0).length,
-                'Vice-Champions': data.filter((_, i) => i === 1).length,
-                '3èmes': data.filter((_, i) => i === 2).length,
-                'Parfaits': data.filter(p => p.absent === 0).length
-            };
+            
+            // Calculer les totaux pour tous les joueurs
+            let totalPresences = 0;
+            let totalAbsences = 0;
+            let totalVacances = 0;
+            let totalRetards = 0;
+            
+            data.forEach(player => {
+                totalPresences += player.present - player.retards; // Présences sans les retards
+                totalAbsences += player.absent;
+                totalVacances += player.repos;
+                totalRetards += player.retards;
+            });
             
             new Chart(ctx2, {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(badgeCounts),
+                    labels: ['Présences', 'Retards', 'Vacances', 'Absences'],
                     datasets: [{
-                        data: Object.values(badgeCounts),
-                        backgroundColor: ['#FFD700', '#C0C0C0', '#CD7F32', '#28a745']
+                        data: [totalPresences, totalRetards, totalVacances, totalAbsences],
+                        backgroundColor: ['#28a745', '#ffc107', '#17a2b8', '#dc3545'],
+                        borderColor: ['#1e7e34', '#e0a800', '#138496', '#c82333'],
+                        borderWidth: 2
                     }]
                 },
                 options: {
-                    responsive: true
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Répartition Générale des Statuts'
+                        }
+                    }
                 }
             });
         }
@@ -2050,48 +2136,77 @@
             
             // En-tête
             doc.setFontSize(20);
-            doc.text('Senior - Classement Compétition', 105, 20, { align: 'center' });
+            doc.text('Senior - Classement par Assiduité', 105, 20, { align: 'center' });
             
-            // Calculer les données
+            // Date
+            doc.setFontSize(12);
+            doc.text(new Date().toLocaleDateString('fr-FR'), 105, 30, { align: 'center' });
+            
+            // Calculer les données de compétition
             const competitionData = players.map(player => {
-                let points = 0;
                 let present = 0;
+                let repos = 0;
+                let absent = 0;
+                let retards = 0;
+                let totalSessions = 0;
                 
                 sessions.forEach(session => {
                     const status = presences[player.id][session.id];
+                    totalSessions++;
+                    
                     if (status === 'pst') {
-                        points += 3;
                         present++;
                     } else if (status === 'vac') {
-                        points += 1;
+                        repos++;
+                    } else if (status === 'abp' || status === 'absp' || status === 'bls') {
+                        absent++;
+                    } else if (status === 'ca' || status === 'cb' || status === 'cc') {
+                        present++;
+                    } else if (status === 'ret') {
+                        retards++;
+                        present++;
                     }
                 });
+                
+                const effectiveSessions = totalSessions - repos;
+                const attendanceRate = effectiveSessions > 0 ? Math.round(((present) / effectiveSessions) * 100) : 0;
                 
                 return {
                     prenom: player.prenom,
                     nom: player.nom,
-                    points: points,
-                    presences: present
+                    attendanceRate: attendanceRate,
+                    present: present,
+                    absent: absent,
+                    retards: retards
                 };
-            }).sort((a, b) => b.points - a.points);
+            }).sort((a, b) => {
+                if (b.attendanceRate === a.attendanceRate) {
+                    return b.present - a.present;
+                }
+                return b.attendanceRate - a.attendanceRate;
+            });
             
             // Tableau
             doc.autoTable({
-                head: [['Rang', 'Prénom', 'Nom', 'Points', 'Présences']],
+                head: [['Rang', 'Prénom', 'Nom', 'Taux Assiduité', 'Présences', 'Absences', 'Retards']],
                 body: competitionData.map((player, index) => {
                     let rang = (index + 1).toString();
                     if (index === 0) rang = '🏆 1';
                     else if (index === 1) rang = '🥈 2';
                     else if (index === 2) rang = '🥉 3';
                     
-                    return [rang, player.prenom, player.nom, player.points, player.presences];
+                    return [rang, player.prenom, player.nom, player.attendanceRate + '%', player.present, player.absent, player.retards];
                 }),
                 startY: 40,
                 theme: 'grid',
                 headStyles: { fillColor: [118, 75, 162] }
             });
             
-            doc.save('competition_senior.pdf');
+            // Footer
+            doc.setFontSize(10);
+            doc.text('Généré avec Claude Code', 105, doc.internal.pageSize.height - 10, { align: 'center' });
+            
+            doc.save('classement_assiduites_senior.pdf');
         }
 
     </script>
