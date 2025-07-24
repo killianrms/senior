@@ -564,12 +564,10 @@
             <div class="section-header">
                 <h2 class="section-title">Gestion des Présences</h2>
                 <div class="btn-group">
-                    <button class="btn btn-primary" onclick="showAddPlayerModal()">➕ Ajouter Joueur</button>
                     <button class="btn btn-primary" onclick="showManagePlayersModal()">👥 Gérer Joueurs</button>
-                    <button class="btn btn-secondary" onclick="showAddDateModal()">📅 Ajouter Date</button>
                     <button class="btn btn-secondary" onclick="showManageDatesModal()">📅 Gérer Dates</button>
+                    <button class="btn btn-warning" onclick="showManagePeriodsModal()">⏱️ Gérer Périodes</button>
                     <button class="btn btn-success" onclick="saveData()">💾 Sauvegarder</button>
-                    <button class="btn btn-warning" onclick="loadData()">📂 Charger</button>
                 </div>
             </div>
 
@@ -588,10 +586,8 @@
                 </div>
             </div>
 
-            <div class="btn-group" style="margin-bottom: 20px;">
-                <button class="btn btn-primary" onclick="showPeriod('2024')">📅 Août-Déc 2024</button>
-                <button class="btn btn-primary" onclick="showPeriod('2025')">📅 Jan-Mai 2025</button>
-                <button class="btn btn-secondary" onclick="showPeriod('all')">📅 Toute la saison</button>
+            <div class="btn-group" style="margin-bottom: 20px;" id="periodButtons">
+                <!-- Les boutons seront générés dynamiquement -->
             </div>
 
             <div class="presence-grid">
@@ -689,11 +685,9 @@
 
             <div class="charts-container">
                 <div class="chart-card">
-                    <div class="chart-title">Classement par Points</div>
                     <canvas id="pointsChart"></canvas>
                 </div>
                 <div class="chart-card">
-                    <div class="chart-title">Répartition des Badges</div>
                     <canvas id="badgesChart"></canvas>
                 </div>
             </div>
@@ -731,12 +725,18 @@
         let sessions = [];
         let presences = {};
         let currentPeriod = 'all';
+        let customPeriods = [
+            { id: 'all', name: 'Toute la saison', startDate: null, endDate: null },
+            { id: '2024', name: 'Août-Déc 2024', startDate: '2024-08-01', endDate: '2024-12-31' },
+            { id: '2025', name: 'Jan-Mai 2025', startDate: '2025-01-01', endDate: '2025-05-31' }
+        ];
 
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
             initializeData();
             updateStats();
+            updatePeriodButtons();
             renderPresenceTable();
         });
 
@@ -762,6 +762,162 @@
         function showPeriod(period) {
             currentPeriod = period;
             renderPresenceTable();
+            updatePeriodButtons();
+        }
+
+        // Mettre à jour les boutons de période
+        function updatePeriodButtons() {
+            const buttonsContainer = document.getElementById('periodButtons');
+            buttonsContainer.innerHTML = '';
+            
+            customPeriods.forEach(period => {
+                const button = document.createElement('button');
+                button.className = `btn ${currentPeriod === period.id ? 'btn-primary' : 'btn-secondary'}`;
+                button.textContent = `📅 ${period.name}`;
+                button.onclick = () => showPeriod(period.id);
+                buttonsContainer.appendChild(button);
+            });
+        }
+
+        // Gérer les périodes (ajout/modification/suppression)
+        function showManagePeriodsModal() {
+            let periodsHtml = `
+                <h2>⏱️ Gérer les Périodes</h2>
+                
+                <div style="background: #f8f9ff; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3>➕ Ajouter une Nouvelle Période</h3>
+                    <form onsubmit="addPeriodFromModal(event)">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div class="form-group">
+                                <label>Nom de la période:</label>
+                                <input type="text" name="name" placeholder="Ex: Octobre 2024" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Date de début:</label>
+                                <input type="date" name="startDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Date de fin:</label>
+                                <input type="date" name="endDate" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">➕ Ajouter</button>
+                    </form>
+                </div>
+                
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <h3>📋 Périodes Existantes</h3>
+                    <table class="ranking-table">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Début</th>
+                                <th>Fin</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            customPeriods.forEach((period, index) => {
+                const isDefault = period.id === 'all' || period.id === '2024' || period.id === '2025';
+                periodsHtml += `
+                    <tr>
+                        <td>${period.name}</td>
+                        <td>${period.startDate ? new Date(period.startDate).toLocaleDateString('fr-FR') : 'Début'}</td>
+                        <td>${period.endDate ? new Date(period.endDate).toLocaleDateString('fr-FR') : 'Fin'}</td>
+                        <td>
+                            ${!isDefault ? `
+                                <button class="btn btn-warning" onclick="editPeriod(${index})" style="margin-right: 10px;">✏️ Modifier</button>
+                                <button class="btn btn-danger" onclick="deletePeriod(${index})">🗑️ Supprimer</button>
+                            ` : '<span style="color: #999;">Période par défaut</span>'}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            periodsHtml += `
+                        </tbody>
+                    </table>
+                </div>
+                <br>
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Fermer</button>
+            `;
+            
+            showModal(periodsHtml);
+        }
+
+        // Ajouter une période depuis la modal
+        function addPeriodFromModal(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const newPeriod = {
+                id: 'custom_' + Date.now(),
+                name: formData.get('name'),
+                startDate: formData.get('startDate'),
+                endDate: formData.get('endDate')
+            };
+            
+            customPeriods.push(newPeriod);
+            updatePeriodButtons();
+            autoSave();
+            showManagePeriodsModal();
+        }
+
+        // Modifier une période
+        function editPeriod(index) {
+            const period = customPeriods[index];
+            showModal(`
+                <h2>✏️ Modifier la Période</h2>
+                <form onsubmit="updatePeriod(event, ${index})">
+                    <div class="form-group">
+                        <label>Nom de la période:</label>
+                        <input type="text" name="name" value="${period.name}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Date de début:</label>
+                        <input type="date" name="startDate" value="${period.startDate || ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Date de fin:</label>
+                        <input type="date" name="endDate" value="${period.endDate || ''}" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">💾 Sauvegarder</button>
+                    <button type="button" class="btn btn-secondary" onclick="showManagePeriodsModal()">⬅️ Retour</button>
+                </form>
+            `);
+        }
+
+        // Mettre à jour une période
+        function updatePeriod(event, index) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            
+            customPeriods[index].name = formData.get('name');
+            customPeriods[index].startDate = formData.get('startDate');
+            customPeriods[index].endDate = formData.get('endDate');
+            
+            updatePeriodButtons();
+            autoSave();
+            showManagePeriodsModal();
+        }
+
+        // Supprimer une période
+        function deletePeriod(index) {
+            const period = customPeriods[index];
+            
+            if (confirm(`Êtes-vous sûr de vouloir supprimer la période "${period.name}" ?`)) {
+                customPeriods.splice(index, 1);
+                
+                // Si la période supprimée était active, revenir à "Toute la saison"
+                if (currentPeriod === period.id) {
+                    showPeriod('all');
+                }
+                
+                updatePeriodButtons();
+                autoSave();
+                showManagePeriodsModal();
+            }
         }
 
         // Initialiser les données
@@ -845,10 +1001,12 @@
             
             // Filtrer les sessions selon la période
             let filteredSessions = sessions;
-            if (currentPeriod === '2024') {
-                filteredSessions = sessions.filter(s => s.date.startsWith('2024'));
-            } else if (currentPeriod === '2025') {
-                filteredSessions = sessions.filter(s => s.date.startsWith('2025'));
+            const currentPeriodObj = customPeriods.find(p => p.id === currentPeriod);
+            
+            if (currentPeriodObj && currentPeriodObj.startDate && currentPeriodObj.endDate) {
+                filteredSessions = sessions.filter(s => 
+                    s.date >= currentPeriodObj.startDate && s.date <= currentPeriodObj.endDate
+                );
             }
             
             // Réinitialiser l'en-tête
@@ -1184,28 +1342,32 @@
             }
         }
 
-        // Ajouter un joueur
-        function showAddPlayerModal() {
-            showModal(`
-                <h2>Ajouter un Joueur</h2>
-                <form onsubmit="addPlayer(event)">
-                    <div class="form-group">
-                        <label>Prénom:</label>
-                        <input type="text" name="prenom" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Nom:</label>
-                        <input type="text" name="nom" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Ajouter</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
-                </form>
-            `);
-        }
 
-        // Gérer les joueurs (modification/suppression)
+        // Gérer les joueurs (ajout/modification/suppression)
         function showManagePlayersModal() {
-            let playersHtml = '<h2>👥 Gérer les Joueurs</h2><div style="max-height: 400px; overflow-y: auto;">';
+            let playersHtml = `
+                <h2>👥 Gérer les Joueurs</h2>
+                
+                <div style="background: #f8f9ff; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3>➕ Ajouter un Nouveau Joueur</h3>
+                    <form onsubmit="addPlayerFromModal(event)">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div class="form-group">
+                                <label>Prénom:</label>
+                                <input type="text" name="prenom" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Nom:</label>
+                                <input type="text" name="nom" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">➕ Ajouter</button>
+                    </form>
+                </div>
+                
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <h3>📋 Joueurs Existants</h3>
+            `;
             
             if (players.length === 0) {
                 playersHtml += '<p>Aucun joueur enregistré.</p>';
@@ -1230,6 +1392,30 @@
             
             playersHtml += '</div><br><button type="button" class="btn btn-secondary" onclick="closeModal()">Fermer</button>';
             showModal(playersHtml);
+        }
+
+        // Ajouter un joueur depuis la modal de gestion
+        function addPlayerFromModal(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const newPlayer = {
+                id: Date.now(),
+                prenom: formData.get('prenom'),
+                nom: formData.get('nom')
+            };
+            
+            players.push(newPlayer);
+            presences[newPlayer.id] = {};
+            
+            // Initialiser les présences pour ce joueur
+            sessions.forEach(session => {
+                presences[newPlayer.id][session.id] = 'ap';
+            });
+            
+            updateStats();
+            renderPresenceTable();
+            autoSave();
+            showManagePlayersModal(); // Recharger la modal
         }
 
         // Modifier un joueur
@@ -1284,54 +1470,36 @@
             }
         }
 
-        function addPlayer(event) {
-            event.preventDefault();
-            const formData = new FormData(event.target);
-            const newPlayer = {
-                id: Date.now(),
-                prenom: formData.get('prenom'),
-                nom: formData.get('nom')
-            };
-            
-            players.push(newPlayer);
-            presences[newPlayer.id] = {};
-            
-            // Initialiser les présences pour ce joueur
-            sessions.forEach(session => {
-                presences[newPlayer.id][session.id] = 'ap';
-            });
-            
-            updateStats();
-            renderPresenceTable();
-            autoSave();
-            closeModal();
-        }
 
-        // Ajouter une date
-        function showAddDateModal() {
-            showModal(`
-                <h2>Ajouter une Date d'Entraînement</h2>
-                <form onsubmit="addDate(event)">
-                    <div class="form-group">
-                        <label>Date:</label>
-                        <input type="date" name="date" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Type:</label>
-                        <select name="type" required>
-                            <option value="Entraînement">Entraînement</option>
-                            <option value="Match">Match</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Ajouter</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
-                </form>
-            `);
-        }
 
-        // Gérer les dates/sessions (modification/suppression)
+        // Gérer les dates/sessions (ajout/modification/suppression)
         function showManageDatesModal() {
-            let datesHtml = '<h2>📅 Gérer les Dates</h2><div style="max-height: 400px; overflow-y: auto;">';
+            let datesHtml = `
+                <h2>📅 Gérer les Dates</h2>
+                
+                <div style="background: #f8f9ff; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3>➕ Ajouter une Nouvelle Date</h3>
+                    <form onsubmit="addDateFromModal(event)">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div class="form-group">
+                                <label>Date:</label>
+                                <input type="date" name="date" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Type:</label>
+                                <select name="type" required>
+                                    <option value="Entraînement">Entraînement</option>
+                                    <option value="Match">Match</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">➕ Ajouter</button>
+                    </form>
+                </div>
+                
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <h3>📋 Sessions Existantes</h3>
+            `;
             
             if (sessions.length === 0) {
                 datesHtml += '<p>Aucune session enregistrée.</p>';
@@ -1362,6 +1530,30 @@
             
             datesHtml += '</div><br><button type="button" class="btn btn-secondary" onclick="closeModal()">Fermer</button>';
             showModal(datesHtml);
+        }
+
+        // Ajouter une date depuis la modal de gestion
+        function addDateFromModal(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const newSession = {
+                id: Date.now(),
+                date: formData.get('date'),
+                type: formData.get('type')
+            };
+            
+            sessions.push(newSession);
+            sessions.sort((a, b) => a.date.localeCompare(b.date));
+            
+            // Initialiser les présences pour cette session
+            players.forEach(player => {
+                presences[player.id][newSession.id] = 'ap';
+            });
+            
+            updateStats();
+            renderPresenceTable();
+            autoSave();
+            showManageDatesModal(); // Recharger la modal
         }
 
         // Modifier une session
@@ -1427,35 +1619,14 @@
             }
         }
 
-        function addDate(event) {
-            event.preventDefault();
-            const formData = new FormData(event.target);
-            const newSession = {
-                id: Date.now(),
-                date: formData.get('date'),
-                type: formData.get('type')
-            };
-            
-            sessions.push(newSession);
-            sessions.sort((a, b) => a.date.localeCompare(b.date));
-            
-            // Initialiser les présences pour cette session
-            players.forEach(player => {
-                presences[player.id][newSession.id] = 'ap';
-            });
-            
-            updateStats();
-            renderPresenceTable();
-            autoSave();
-            closeModal();
-        }
 
         // Sauvegarder les données
         function saveData() {
             const data = {
                 players,
                 sessions,
-                presences
+                presences,
+                customPeriods
             };
             localStorage.setItem('senior2526Data', JSON.stringify(data));
             alert('Données sauvegardées !');
@@ -1466,7 +1637,8 @@
             const data = {
                 players,
                 sessions,
-                presences
+                presences,
+                customPeriods
             };
             localStorage.setItem('senior2526Data', JSON.stringify(data));
         }
@@ -1479,6 +1651,9 @@
                 players = data.players || [];
                 sessions = data.sessions || [];
                 presences = data.presences || {};
+                if (data.customPeriods) {
+                    customPeriods = data.customPeriods;
+                }
             }
         }
 
