@@ -914,18 +914,17 @@
         let unsubscribeListeners = [];
         let customPeriods = [
             { id: 'all', name: 'Toute la saison', startDate: null, endDate: null },
-            { id: 'aug2025', name: 'Août 2025 (Prépa)', startDate: '2025-08-01', endDate: '2025-08-31' },
-            { id: '2025', name: 'Sept-Déc 2025', startDate: '2025-09-01', endDate: '2025-12-31' },
-            { id: '2026', name: 'Jan-Mai 2026', startDate: '2026-01-01', endDate: '2026-05-31' },
-            { id: 'sep2025', name: 'Septembre 2025', startDate: '2025-09-01', endDate: '2025-09-30' },
-            { id: 'oct2025', name: 'Octobre 2025', startDate: '2025-10-01', endDate: '2025-10-31' },
-            { id: 'nov2025', name: 'Novembre 2025', startDate: '2025-11-01', endDate: '2025-11-30' },
-            { id: 'dec2025', name: 'Décembre 2025', startDate: '2025-12-01', endDate: '2025-12-31' },
-            { id: 'jan2026', name: 'Janvier 2026', startDate: '2026-01-01', endDate: '2026-01-31' },
-            { id: 'feb2026', name: 'Février 2026', startDate: '2026-02-01', endDate: '2026-02-28' },
-            { id: 'mar2026', name: 'Mars 2026', startDate: '2026-03-01', endDate: '2026-03-31' },
-            { id: 'apr2026', name: 'Avril 2026', startDate: '2026-04-01', endDate: '2026-04-30' },
-            { id: 'may2026', name: 'Mai 2026', startDate: '2026-05-01', endDate: '2026-05-31' }
+            { id: '2024', name: 'Août-Déc 2024', startDate: '2024-08-01', endDate: '2024-12-31' },
+            { id: '2025', name: 'Jan-Mai 2025', startDate: '2025-01-01', endDate: '2025-05-31' },
+            { id: 'sep2024', name: 'Septembre 2024', startDate: '2024-09-01', endDate: '2024-09-30' },
+            { id: 'oct2024', name: 'Octobre 2024', startDate: '2024-10-01', endDate: '2024-10-31' },
+            { id: 'nov2024', name: 'Novembre 2024', startDate: '2024-11-01', endDate: '2024-11-30' },
+            { id: 'dec2024', name: 'Décembre 2024', startDate: '2024-12-01', endDate: '2024-12-31' },
+            { id: 'jan2025', name: 'Janvier 2025', startDate: '2025-01-01', endDate: '2025-01-31' },
+            { id: 'feb2025', name: 'Février 2025', startDate: '2025-02-01', endDate: '2025-02-28' },
+            { id: 'mar2025', name: 'Mars 2025', startDate: '2025-03-01', endDate: '2025-03-31' },
+            { id: 'apr2025', name: 'Avril 2025', startDate: '2025-04-01', endDate: '2025-04-30' },
+            { id: 'may2025', name: 'Mai 2025', startDate: '2025-05-01', endDate: '2025-05-31' }
         ];
 
         // Initialisation
@@ -1090,7 +1089,7 @@
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                             <div class="form-group">
                                 <label>Nom de la période:</label>
-                                <input type="text" name="name" placeholder="Ex: Octobre 2025" required>
+                                <input type="text" name="name" placeholder="Ex: Octobre 2024" required>
                             </div>
                             <div class="form-group">
                                 <label>Date de début:</label>
@@ -1120,7 +1119,7 @@
             `;
 
             customPeriods.forEach((period, index) => {
-                const isDefault = period.id === 'all' || period.id === 'aug2025' || period.id === '2025' || period.id === '2026';
+                const isDefault = period.id === 'all' || period.id === '2024' || period.id === '2025';
                 periodsHtml += `
                     <tr>
                         <td>${period.name}</td>
@@ -1232,44 +1231,33 @@
             }
             
             if (sessions.length === 0) {
-                // Générer des sessions pour Août 2025 (Préparation)
-                const datesAug2025 = [];
-                for (let i = 0; i < 8; i++) {
-                    const day = Math.floor(Math.random() * 31) + 1;
-                    datesAug2025.push({
-                        id: datesAug2025.length + 1,
-                        date: `2025-08-${day.toString().padStart(2, '0')}`,
-                        type: 'Entraînement'
-                    });
-                }
-                
-                // Générer des sessions pour Septembre-Décembre 2025
-                const dates2025 = [];
-                for (let month = 9; month <= 12; month++) {
+                // Générer des sessions pour Août-Décembre 2024
+                const dates2024 = [];
+                for (let month = 8; month <= 12; month++) {
                     for (let i = 0; i < 20; i++) {
                         const day = Math.floor(Math.random() * 28) + 1;
+                        dates2024.push({
+                            id: dates2024.length + 1,
+                            date: `2024-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`,
+                            type: i % 5 === 0 ? 'Match' : 'Entraînement'
+                        });
+                    }
+                }
+                
+                // Générer des sessions pour Janvier-Mai 2025
+                const dates2025 = [];
+                for (let month = 1; month <= 5; month++) {
+                    for (let i = 0; i < 17; i++) {
+                        const day = Math.floor(Math.random() * 28) + 1;
                         dates2025.push({
-                            id: datesAug2025.length + dates2025.length + 1,
+                            id: dates2024.length + dates2025.length + 1,
                             date: `2025-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`,
                             type: i % 5 === 0 ? 'Match' : 'Entraînement'
                         });
                     }
                 }
                 
-                // Générer des sessions pour Janvier-Mai 2026
-                const dates2026 = [];
-                for (let month = 1; month <= 5; month++) {
-                    for (let i = 0; i < 17; i++) {
-                        const day = Math.floor(Math.random() * 28) + 1;
-                        dates2026.push({
-                            id: datesAug2025.length + dates2025.length + dates2026.length + 1,
-                            date: `2026-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`,
-                            type: i % 5 === 0 ? 'Match' : 'Entraînement'
-                        });
-                    }
-                }
-                
-                sessions = [...datesAug2025, ...dates2025, ...dates2026].sort((a, b) => a.date.localeCompare(b.date));
+                sessions = [...dates2024, ...dates2025].sort((a, b) => a.date.localeCompare(b.date));
             }
             
             // Initialiser les présences
@@ -2519,3 +2507,4 @@
     </script>
 </body>
 </html>
+
