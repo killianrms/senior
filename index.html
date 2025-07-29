@@ -1006,56 +1006,13 @@
         let isFirebaseInitialized = false;
         let unsubscribeListeners = [];
         let isContrastedTheme = false;
-        // Périodes fixes pour la saison 2025-2026
         let customPeriods = [
             { id: 'all', name: 'Toute la saison', startDate: null, endDate: null },
-            
-            // Saison complète
-            {
-                id: 'season2025',
-                name: 'Saison 2025-2026',
-                startDate: '2025-08-01',
-                endDate: '2026-06-30'
-            },
-            
-            // Trimestres
-            {
-                id: 'q1_2025',
-                name: 'T1: Sept-Oct-Nov 2025',
-                startDate: '2025-09-01',
-                endDate: '2025-11-30'
-            },
-            {
-                id: 'q2_2025',
-                name: 'T2: Déc-Jan-Fév 2025-26',
-                startDate: '2025-12-01',
-                endDate: '2026-02-28'
-            },
-            {
-                id: 'q3_2026',
-                name: 'T3: Mars-Avr-Mai 2026',
-                startDate: '2026-03-01',
-                endDate: '2026-05-31'
-            },
-            {
-                id: 'q4_2026',
-                name: 'T4: Juin 2026',
-                startDate: '2026-06-01',
-                endDate: '2026-06-30'
-            },
-            
-            // Mois individuels
-            { id: 'aug2025', name: 'Août 2025', startDate: '2025-08-01', endDate: '2025-08-31' },
-            { id: 'sep2025', name: 'Septembre 2025', startDate: '2025-09-01', endDate: '2025-09-30' },
-            { id: 'oct2025', name: 'Octobre 2025', startDate: '2025-10-01', endDate: '2025-10-31' },
-            { id: 'nov2025', name: 'Novembre 2025', startDate: '2025-11-01', endDate: '2025-11-30' },
-            { id: 'dec2025', name: 'Décembre 2025', startDate: '2025-12-01', endDate: '2025-12-31' },
-            { id: 'jan2026', name: 'Janvier 2026', startDate: '2026-01-01', endDate: '2026-01-31' },
-            { id: 'feb2026', name: 'Février 2026', startDate: '2026-02-01', endDate: '2026-02-28' },
-            { id: 'mar2026', name: 'Mars 2026', startDate: '2026-03-01', endDate: '2026-03-31' },
-            { id: 'apr2026', name: 'Avril 2026', startDate: '2026-04-01', endDate: '2026-04-30' },
-            { id: 'may2026', name: 'Mai 2026', startDate: '2026-05-01', endDate: '2026-05-31' },
-            { id: 'jun2026', name: 'Juin 2026', startDate: '2026-06-01', endDate: '2026-06-30' }
+            { id: '2024', name: 'Sept-Déc 2024', startDate: '2024-09-01', endDate: '2024-12-31' },
+            { id: 'sep2024', name: 'Septembre 2024', startDate: '2024-09-01', endDate: '2024-09-30' },
+            { id: 'oct2024', name: 'Octobre 2024', startDate: '2024-10-01', endDate: '2024-10-31' },
+            { id: 'nov2024', name: 'Novembre 2024', startDate: '2024-11-01', endDate: '2024-11-30' },
+            { id: 'dec2024', name: 'Décembre 2024', startDate: '2024-12-01', endDate: '2024-12-31' }
         ];
 
         // Fonction de toggle du thème contrasté
@@ -1090,8 +1047,8 @@
             // Charger les préférences
             loadThemePreference();
             
-            // Définir la période par défaut sur la saison 2025-2026
-            currentPeriod = 'season2025';
+            // Définir la période par défaut sur la saison septembre-décembre 2024
+            currentPeriod = '2024';
             
             // Attendre que Firebase soit chargé
             setTimeout(() => {
