@@ -1006,6 +1006,17 @@
         let isFirebaseInitialized = false;
         let unsubscribeListeners = [];
         let isContrastedTheme = false;
+
+        // Fonction pour vider toutes les sessions
+        function clearAllSessions() {
+            sessions = [];
+            // Vider aussi les présences liées aux sessions
+            players.forEach(player => {
+                presences[player.id] = {};
+            });
+            // Sauvegarder le nettoyage
+            saveData();
+        }
         let customPeriods = [
             { id: 'all', name: 'Toute la saison', startDate: null, endDate: null },
             { id: '2024', name: 'Sept-Déc 2024', startDate: '2024-09-01', endDate: '2024-12-31' },
@@ -1046,6 +1057,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Charger les préférences
             loadThemePreference();
+            
+            // Vider toutes les sessions au démarrage
+            clearAllSessions();
             
             // Définir la période par défaut sur la saison septembre-décembre 2024
             currentPeriod = '2024';
@@ -1351,35 +1365,7 @@
                 ];
             }
             
-            if (sessions.length === 0) {
-                // Générer des sessions pour Août-Décembre 2024
-                const dates2024 = [];
-                for (let month = 8; month <= 12; month++) {
-                    for (let i = 0; i < 20; i++) {
-                        const day = Math.floor(Math.random() * 28) + 1;
-                        dates2024.push({
-                            id: dates2024.length + 1,
-                            date: `2024-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`,
-                            type: i % 5 === 0 ? 'Match' : 'Entraînement'
-                        });
-                    }
-                }
-                
-                // Générer des sessions pour Janvier-Mai 2025
-                const dates2025 = [];
-                for (let month = 1; month <= 5; month++) {
-                    for (let i = 0; i < 17; i++) {
-                        const day = Math.floor(Math.random() * 28) + 1;
-                        dates2025.push({
-                            id: dates2024.length + dates2025.length + 1,
-                            date: `2025-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`,
-                            type: i % 5 === 0 ? 'Match' : 'Entraînement'
-                        });
-                    }
-                }
-                
-                sessions = [...dates2024, ...dates2025].sort((a, b) => a.date.localeCompare(b.date));
-            }
+            // Aucune session générée automatiquement - les sessions doivent être ajoutées manuellement
             
             // Initialiser les présences
             players.forEach(player => {
