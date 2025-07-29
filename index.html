@@ -655,6 +655,94 @@
                 font-size: 12px;
             }
         }
+
+        /* Thème contrasté */
+        body.contrasted-theme {
+            background: #f8f9fa !important;
+            color: #000 !important;
+        }
+
+        body.contrasted-theme .header {
+            background: #fff !important;
+            color: #000 !important;
+            border: 2px solid #333;
+        }
+
+        body.contrasted-theme .header h1 {
+            color: #000 !important;
+            text-shadow: none !important;
+        }
+
+        body.contrasted-theme .header p {
+            color: #333 !important;
+        }
+
+        body.contrasted-theme .tab-button {
+            background: #fff !important;
+            color: #000 !important;
+            border: 2px solid #333 !important;
+        }
+
+        body.contrasted-theme .tab-button.active {
+            background: #000 !important;
+            color: #fff !important;
+        }
+
+        body.contrasted-theme .tab-content {
+            background: #fff !important;
+            color: #000 !important;
+            border: 2px solid #333;
+        }
+
+        body.contrasted-theme .presence-table {
+            background: #fff !important;
+            color: #000 !important;
+        }
+
+        body.contrasted-theme .presence-table th {
+            background: #f8f9fa !important;
+            color: #000 !important;
+            border: 1px solid #333 !important;
+        }
+
+        body.contrasted-theme .presence-table td {
+            background: #fff !important;
+            color: #000 !important;
+            border: 1px solid #333 !important;
+        }
+
+        body.contrasted-theme .status-cell {
+            color: #000 !important;
+            font-weight: bold !important;
+        }
+
+        body.contrasted-theme .btn-primary {
+            background: #fff !important;
+            color: #000 !important;
+            border: 2px solid #333 !important;
+        }
+
+        body.contrasted-theme .btn-secondary {
+            background: #f8f9fa !important;
+            color: #000 !important;
+            border: 2px solid #666 !important;
+        }
+
+        body.contrasted-theme .modal-content {
+            background: #fff !important;
+            color: #000 !important;
+            border: 2px solid #333 !important;
+        }
+
+        body.contrasted-theme #themeToggle {
+            background: #000 !important;
+            color: #fff !important;
+            border: 2px solid #333 !important;
+        }
+
+        body.contrasted-theme #themeToggle:hover {
+            background: #333 !important;
+        }
     </style>
 </head>
 <body>
@@ -665,6 +753,19 @@
             <div id="firebaseStatus" style="margin-top: 10px; font-size: 14px; opacity: 0.8;">
                 <span id="statusIndicator">🔄</span> <span id="statusText">Connexion Firebase...</span>
                 <button id="retryFirebase" style="margin-left: 10px; padding: 2px 8px; font-size: 12px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; display: none;" onclick="retryFirebaseConnection()">🔄 Retry</button>
+            </div>
+            <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                <button id="themeToggle" onclick="toggleTheme()" style="padding: 8px 16px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 20px; cursor: pointer; font-size: 14px; transition: all 0.3s ease;">
+                    🌓 Thème Contrasté
+                </button>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <label style="color: white; font-size: 14px;">Saison:</label>
+                    <select id="seasonYearSelect" onchange="changeSeasonYear(this.value)" style="padding: 4px 8px; border-radius: 10px; border: none; background: rgba(255,255,255,0.9); font-size: 14px;">
+                        <option value="2023">2023-2024</option>
+                        <option value="2024" selected>2024-2025</option>
+                        <option value="2025">2025-2026</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -912,23 +1013,119 @@
         let currentSort = 'default';
         let isFirebaseInitialized = false;
         let unsubscribeListeners = [];
-        let customPeriods = [
-            { id: 'all', name: 'Toute la saison', startDate: null, endDate: null },
-            { id: '2024', name: 'Août-Déc 2024', startDate: '2024-08-01', endDate: '2024-12-31' },
-            { id: '2025', name: 'Jan-Mai 2025', startDate: '2025-01-01', endDate: '2025-05-31' },
-            { id: 'sep2024', name: 'Septembre 2024', startDate: '2024-09-01', endDate: '2024-09-30' },
-            { id: 'oct2024', name: 'Octobre 2024', startDate: '2024-10-01', endDate: '2024-10-31' },
-            { id: 'nov2024', name: 'Novembre 2024', startDate: '2024-11-01', endDate: '2024-11-30' },
-            { id: 'dec2024', name: 'Décembre 2024', startDate: '2024-12-01', endDate: '2024-12-31' },
-            { id: 'jan2025', name: 'Janvier 2025', startDate: '2025-01-01', endDate: '2025-01-31' },
-            { id: 'feb2025', name: 'Février 2025', startDate: '2025-02-01', endDate: '2025-02-28' },
-            { id: 'mar2025', name: 'Mars 2025', startDate: '2025-03-01', endDate: '2025-03-31' },
-            { id: 'apr2025', name: 'Avril 2025', startDate: '2025-04-01', endDate: '2025-04-30' },
-            { id: 'may2025', name: 'Mai 2025', startDate: '2025-05-01', endDate: '2025-05-31' }
-        ];
+        let isContrastedTheme = false;
+        // Configuration des années de référence
+        let currentSeasonYear = 2024; // Année de début de saison (septembre)
+        let availableYears = [2023, 2024, 2025]; // Années disponibles
+
+        // Générer les périodes dynamiquement
+        function generateCustomPeriods() {
+            let periods = [
+                { id: 'all', name: 'Toute la saison', startDate: null, endDate: null }
+            ];
+
+            // Ajouter les saisons complètes
+            availableYears.forEach(year => {
+                periods.push({
+                    id: `season${year}`,
+                    name: `Saison ${year}-${year + 1}`,
+                    startDate: `${year}-09-01`,
+                    endDate: `${year}-12-31`
+                });
+            });
+
+            // Ajouter les mois de la saison courante (septembre à décembre)
+            const seasonMonths = [
+                { id: 'sep', name: 'Septembre', month: 9 },
+                { id: 'oct', name: 'Octobre', month: 10 },
+                { id: 'nov', name: 'Novembre', month: 11 },
+                { id: 'dec', name: 'Décembre', month: 12 }
+            ];
+
+            seasonMonths.forEach(monthData => {
+                const year = currentSeasonYear;
+                const monthStr = monthData.month.toString().padStart(2, '0');
+                const daysInMonth = new Date(year, monthData.month, 0).getDate();
+                
+                periods.push({
+                    id: `${monthData.id}${year}`,
+                    name: `${monthData.name} ${year}`,
+                    startDate: `${year}-${monthStr}-01`,
+                    endDate: `${year}-${monthStr}-${daysInMonth}`
+                });
+            });
+
+            return periods;
+        }
+
+        let customPeriods = generateCustomPeriods();
+
+        // Fonction pour changer l'année de saison
+        function changeSeasonYear(year) {
+            currentSeasonYear = parseInt(year);
+            customPeriods = generateCustomPeriods();
+            updatePeriodButtons();
+            
+            // Mettre la saison courante par défaut
+            currentPeriod = `season${currentSeasonYear}`;
+            updateStats();
+            renderPresenceTable();
+            
+            // Sauvegarder la préférence
+            localStorage.setItem('currentSeasonYear', currentSeasonYear.toString());
+        }
+
+        // Charger l'année de saison sauvegardée
+        function loadSeasonYearPreference() {
+            const savedYear = localStorage.getItem('currentSeasonYear');
+            if (savedYear && availableYears.includes(parseInt(savedYear))) {
+                currentSeasonYear = parseInt(savedYear);
+                customPeriods = generateCustomPeriods();
+            }
+        }
+
+        // Fonction de toggle du thème contrasté
+        function toggleTheme() {
+            isContrastedTheme = !isContrastedTheme;
+            const body = document.body;
+            const themeButton = document.getElementById('themeToggle');
+            
+            if (isContrastedTheme) {
+                body.classList.add('contrasted-theme');
+                themeButton.innerHTML = '🌞 Thème Normal';
+                localStorage.setItem('contrastedTheme', 'true');
+            } else {
+                body.classList.remove('contrasted-theme');
+                themeButton.innerHTML = '🌓 Thème Contrasté';
+                localStorage.setItem('contrastedTheme', 'false');
+            }
+        }
+
+        // Charger la préférence de thème au démarrage
+        function loadThemePreference() {
+            const savedTheme = localStorage.getItem('contrastedTheme');
+            if (savedTheme === 'true') {
+                isContrastedTheme = true;
+                document.body.classList.add('contrasted-theme');
+                document.getElementById('themeToggle').innerHTML = '🌞 Thème Normal';
+            }
+        }
 
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
+            // Charger les préférences
+            loadThemePreference();
+            loadSeasonYearPreference();
+            
+            // Mettre à jour l'interface avec la saison chargée
+            const seasonSelect = document.getElementById('seasonYearSelect');
+            if (seasonSelect) {
+                seasonSelect.value = currentSeasonYear.toString();
+            }
+            
+            // Définir la période par défaut sur la saison courante
+            currentPeriod = `season${currentSeasonYear}`;
+            
             // Attendre que Firebase soit chargé
             setTimeout(() => {
                 if (window.firebaseServices) {
@@ -1538,6 +1735,9 @@
                     const status = presences[player.id][session.id];
                     if (status === 'pst' && session.type === 'Entraînement') {
                         present++;
+                        points += 3;
+                    } else if (status === 'ret' && session.type === 'Entraînement') {
+                        present++; // Un retard compte comme une présence
                         points += 3;
                     } else if (status === 'vac') {
                         points += 1;
