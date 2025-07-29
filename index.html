@@ -1164,9 +1164,6 @@
             // Charger les préférences
             loadThemePreference();
             
-            // Vider toutes les sessions au démarrage
-            clearAllSessions();
-            
             // Définir la période par défaut sur la saison 2025-2026
             currentPeriod = 'season2025';
             
@@ -2455,7 +2452,7 @@
                         
                         if (hasChanged) {
                             players = data.players || [];
-                            sessions = []; // Never load any sessions, even if they exist in saved data
+                            sessions = data.sessions || [];
                             presences = data.presences || {};
                             if (data.customPeriods) {
                                 customPeriods = data.customPeriods;
@@ -2498,7 +2495,7 @@
             if (savedData) {
                 const data = JSON.parse(savedData);
                 players = data.players || [];
-                sessions = []; // Never load any sessions, even if they exist in saved data
+                sessions = data.sessions || [];
                 presences = data.presences || {};
                 if (data.customPeriods) {
                     customPeriods = data.customPeriods;
