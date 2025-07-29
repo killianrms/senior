@@ -1007,15 +1007,47 @@
         let unsubscribeListeners = [];
         let isContrastedTheme = false;
 
-        // Fonction pour vider toutes les sessions
+        // Fonction pour vider TOUTES les sessions de TOUTES les saisons
         function clearAllSessions() {
+            console.log('🗑️ Suppression complète de toutes les sessions...');
+            
+            // Vider le tableau des sessions en mémoire
             sessions = [];
-            // Vider aussi les présences liées aux sessions
+            
+            // Vider toutes les présences de tous les joueurs
             players.forEach(player => {
                 presences[player.id] = {};
             });
-            // Sauvegarder le nettoyage
+            
+            // Supprimer du localStorage
+            localStorage.removeItem('senior2526Data');
+            localStorage.removeItem('seniorData'); // Au cas où l'ancien nom serait utilisé
+            
+            // Sauvegarder l'état vide (écrase Firebase aussi)
             saveData();
+            
+            // Si Firebase est initialisé, supprimer aussi de Firebase
+            if (isFirebaseInitialized && window.db && window.firebaseServices) {
+                try {
+                    // Nettoyer Firebase en sauvegardant un état vide
+                    const emptyData = {
+                        players: players,
+                        sessions: [], // Vide
+                        presences: presences,
+                        customPeriods: customPeriods,
+                        lastUpdated: new Date().toISOString()
+                    };
+                    
+                    const { doc, setDoc } = window.firebaseServices;
+                    setDoc(doc(window.db, 'seniorData', 'main'), emptyData)
+                        .then(() => console.log('✅ Sessions supprimées de Firebase'))
+                        .catch(error => console.log('⚠️ Erreur Firebase:', error));
+                } catch (error) {
+                    console.log('⚠️ Erreur lors du nettoyage Firebase:', error);
+                }
+            }
+            
+            console.log('✅ Toutes les sessions ont été supprimées de tous les stockages');
         }
         let customPeriods = [
             { id: 'all', name: 'Toute la saison', startDate: null, endDate: null },
@@ -2334,7 +2366,7 @@
                         
                         if (hasChanged) {
                             players = data.players || [];
-                            sessions = data.sessions || [];
+                            sessions = []; // Never load any sessions, even if they exist in saved data
                             presences = data.presences || {};
                             if (data.customPeriods) {
                                 customPeriods = data.customPeriods;
@@ -2377,7 +2409,7 @@
             if (savedData) {
                 const data = JSON.parse(savedData);
                 players = data.players || [];
-                sessions = data.sessions || [];
+                sessions = []; // Never load any sessions, even if they exist in saved data
                 presences = data.presences || {};
                 if (data.customPeriods) {
                     customPeriods = data.customPeriods;
