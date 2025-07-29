@@ -1507,7 +1507,7 @@
             players.forEach(player => {
                 sessions.forEach(session => {
                     const status = presences[player.id] && presences[player.id][session.id];
-                    if (status === 'pst') {
+                    if (status === 'pst' || status === 'ret') {
                         totalPresent++;
                     }
                     totalPossible++;
