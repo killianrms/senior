@@ -1100,6 +1100,38 @@
             { id: 'jun2026', name: 'Juin 2026', startDate: '2026-06-01', endDate: '2026-06-30' }
         ];
 
+        // Fonction pour réessayer la connexion Firebase
+        async function retryFirebaseConnection() {
+            console.log('🔄 Tentative de reconnexion Firebase manuelle...');
+            updateFirebaseStatus('🔄', 'Reconnexion en cours...', '#ffc107');
+            
+            // Cacher le bouton retry pendant la tentative
+            const retryBtn = document.getElementById('retryFirebase');
+            if (retryBtn) retryBtn.style.display = 'none';
+            
+            try {
+                // Réinitialiser les variables
+                isFirebaseInitialized = false;
+                
+                // Réessayer l'initialisation complète
+                await initializeFirebase();
+                
+            } catch (error) {
+                console.error('❌ Échec de la reconnexion manuelle:', error);
+                updateFirebaseStatus('❌', 'Reconnexion échouée - Mode local', '#dc3545');
+                
+                // Remettre le bouton retry
+                if (retryBtn) retryBtn.style.display = 'inline-block';
+                
+                // Fallback sur localStorage
+                loadData();
+                initializeData();
+                updateStats();
+                updatePeriodButtons();
+                renderPresenceTable();
+            }
+        }
+
         // Fonction de toggle du thème contrasté
         function toggleTheme() {
             isContrastedTheme = !isContrastedTheme;
@@ -1138,21 +1170,29 @@
             // Définir la période par défaut sur la saison 2025-2026
             currentPeriod = 'season2025';
             
-            // Attendre que Firebase soit chargé
-            setTimeout(() => {
+            // Tentative d'initialisation Firebase avec retry
+            let attempts = 0;
+            const maxAttempts = 10;
+            const checkFirebase = () => {
+                attempts++;
                 if (window.firebaseServices) {
+                    console.log(`✅ Firebase détecté après ${attempts} tentatives`);
                     initializeFirebase();
+                } else if (attempts < maxAttempts) {
+                    console.log(`🔄 Tentative Firebase ${attempts}/${maxAttempts}...`);
+                    setTimeout(checkFirebase, 500); // Vérifier toutes les 500ms
                 } else {
-                    console.error('Firebase services non chargés');
-                    updateFirebaseStatus('❌', 'Erreur chargement Firebase', '#dc3545');
-                    // Fallback immédiat
+                    console.error('❌ Firebase services non chargés après', maxAttempts, 'tentatives');
+                    updateFirebaseStatus('❌', 'Firebase indisponible - Mode local', '#dc3545');
+                    // Fallback après tous les essais
                     loadData();
                     initializeData();
                     updateStats();
                     updatePeriodButtons();
                     renderPresenceTable();
                 }
-            }, 2000); // Augmenté à 2 secondes
+            };
+            checkFirebase();
         });
         
         // Initialiser Firebase et charger les données
@@ -1169,14 +1209,25 @@
                 
                 console.log('🔄 Tentative de connexion Firebase...');
                 
-                // Connexion anonyme avec timeout
-                const authPromise = signInAnonymously(window.auth);
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout authentification')), 10000)
-                );
-                
-                await Promise.race([authPromise, timeoutPromise]);
-                console.log('🔥 Firebase initialisé avec succès');
+                // Connexion anonyme avec retry et timeout étendu
+                let authSuccess = false;
+                for (let retry = 0; retry < 3 && !authSuccess; retry++) {
+                    try {
+                        console.log(`🔄 Tentative d'authentification ${retry + 1}/3...`);
+                        const authPromise = signInAnonymously(window.auth);
+                        const timeoutPromise = new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Timeout authentification')), 15000)
+                        );
+                        
+                        await Promise.race([authPromise, timeoutPromise]);
+                        authSuccess = true;
+                        console.log('🔥 Firebase authentifié avec succès');
+                    } catch (authError) {
+                        console.warn(`⚠️ Échec tentative ${retry + 1}:`, authError.message);
+                        if (retry === 2) throw authError; // Dernière tentative
+                        await new Promise(resolve => setTimeout(resolve, 2000)); // Attendre 2s avant retry
+                    }
+                }
                 
                 // Écouter les changements d'authentification
                 onAuthStateChanged(window.auth, (user) => {
@@ -1242,11 +1293,7 @@
             }
         }
         
-        // Retry connexion Firebase
-        function retryFirebaseConnection() {
-            console.log('🔄 Nouvelle tentative de connexion Firebase...');
-            initializeFirebase();
-        }
+        // Cette fonction est maintenant définie plus haut avec une version améliorée (lignes 1103-1133)
 
         // Fonction pour afficher les onglets
         function showTab(tabName) {
