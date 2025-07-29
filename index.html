@@ -390,6 +390,41 @@
             background: #fff176;
             color: #f57f17;
         }
+
+        .status-rep {
+            background: #ffffff;
+            color: #000000;
+            border: 1px solid #000000;
+        }
+
+        /* Styles pour différencier les colonnes Match et Entraînement */
+        .match-session {
+            background-color: #f0f8ff !important;
+        }
+        
+        .match-session select {
+            background-color: #e6f2ff;
+        }
+        
+        .match-header {
+            background-color: #4a86e8 !important;
+            color: white !important;
+        }
+        
+        body.contrasted-theme .match-session {
+            background-color: #e0e0e0 !important;
+            border: 2px solid #666 !important;
+        }
+        
+        body.contrasted-theme .match-session select {
+            background-color: #d0d0d0 !important;
+        }
+        
+        body.contrasted-theme .match-header {
+            background-color: #666 !important;
+            color: white !important;
+            border: 2px solid #333 !important;
+        }
         
         /* Styles spécifiques pour les matchs */
         .match-session .status-pst {
@@ -426,6 +461,7 @@
         option.opt-cb { background-color: #42a5f5; color: white; }
         option.opt-cc { background-color: #90caf9; color: #1976d2; }
         option.opt-ret { background-color: #fff176; color: #f57f17; }
+        option.opt-rep { background-color: #ffffff; color: #000000; }
 
         .ranking-table {
             width: 100%;
@@ -1512,10 +1548,15 @@
             players.forEach(player => {
                 sessions.forEach(session => {
                     const status = presences[player.id] && presences[player.id][session.id];
-                    if (status === 'pst' || status === 'ret') {
-                        totalPresent++;
+                    // REP ne compte pas dans les calculs
+                    if (status === 'rep') {
+                        // Ne rien faire - REP est indicatif seulement
+                    } else {
+                        if (status === 'pst' || status === 'ret') {
+                            totalPresent++;
+                        }
+                        totalPossible++;
                     }
-                    totalPossible++;
                 });
             });
             
@@ -1547,6 +1588,12 @@
                 const date = new Date(session.date);
                 th.innerHTML = `${date.getDate()}/${date.getMonth() + 1}<br><small>${session.type}</small>`;
                 th.style.whiteSpace = 'nowrap';
+                
+                // Ajouter une classe pour les colonnes Match
+                if (session.type === 'Match') {
+                    th.className = 'match-header';
+                }
+                
                 headerRow.appendChild(th);
             });
             
@@ -1580,6 +1627,7 @@
                         { value: 'absp', text: 'AbSP', class: 'opt-absp' },
                         { value: 'bls', text: 'BLS', class: 'opt-bls' },
                         { value: 'vac', text: 'VAC', class: 'opt-vac' },
+                        { value: 'rep', text: 'REP', class: 'opt-rep' },
                         { value: 'ca', text: 'Ca', class: 'opt-ca' },
                         { value: 'cb', text: 'Cb', class: 'opt-cb' },
                         { value: 'cc', text: 'Cc', class: 'opt-cc' },
@@ -1722,6 +1770,7 @@
                         { value: 'absp', text: 'AbSP', class: 'opt-absp' },
                         { value: 'bls', text: 'BLS', class: 'opt-bls' },
                         { value: 'vac', text: 'VAC', class: 'opt-vac' },
+                        { value: 'rep', text: 'REP', class: 'opt-rep' },
                         { value: 'ca', text: 'Ca', class: 'opt-ca' },
                         { value: 'cb', text: 'Cb', class: 'opt-cb' },
                         { value: 'cc', text: 'Cc', class: 'opt-cc' },
@@ -1761,12 +1810,21 @@
         function calculateTotals() {
             const rankings = players.map(player => {
                 let present = 0;
-                let total = sessions.length;
+                let total = 0; // On va compter seulement les sessions où REP n'est pas utilisé
                 let points = 0;
                 let retards = 0;
                 
                 sessions.forEach(session => {
                     const status = presences[player.id][session.id];
+                    
+                    // REP ne compte pas dans les calculs
+                    if (status === 'rep') {
+                        // Ne rien faire - REP est indicatif seulement
+                        return;
+                    }
+                    
+                    total++; // Compter seulement si ce n'est pas REP
+                    
                     if (status === 'pst' && session.type === 'Entraînement') {
                         present++;
                         points += 3;
@@ -1849,6 +1907,13 @@
                 
                 sessions.forEach(session => {
                     const status = presences[player.id][session.id];
+                    
+                    // REP doesn't count in calculations
+                    if (status === 'rep') {
+                        repos++;
+                        return;
+                    }
+                    
                     totalSessions++;
                     
                     if (status === 'pst') {
