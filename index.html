@@ -523,6 +523,11 @@
             color: white;
         }
 
+        .badge-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
@@ -1758,6 +1763,7 @@
                 let present = 0;
                 let total = sessions.length;
                 let points = 0;
+                let retards = 0;
                 
                 sessions.forEach(session => {
                     const status = presences[player.id][session.id];
@@ -1766,6 +1772,7 @@
                         points += 3;
                     } else if (status === 'ret' && session.type === 'Entraînement') {
                         present++; // Un retard compte comme une présence
+                        retards++; // Mais on compte aussi les retards
                         points += 3;
                     } else if (status === 'vac') {
                         points += 1;
@@ -1782,7 +1789,8 @@
                     present,
                     total,
                     rate,
-                    points
+                    points,
+                    retards
                 };
             }).sort((a, b) => b.rate - a.rate);
             
@@ -1805,8 +1813,9 @@
                 else if (index === 2) rankDisplay = '🥉 3';
                 
                 const badges = [];
-                if (player.rate >= 90) badges.push('<span class="badge badge-assidu">Assidu</span>');
+                if (player.rate >= 90 && player.retards < 5) badges.push('<span class="badge badge-assidu">Assidu</span>');
                 if (player.rate >= 75) badges.push('<span class="badge badge-regulier">Régulier</span>');
+                if (player.retards >= 5) badges.push('<span class="badge badge-warning">⏰ Souvent en Retard</span>');
                 
                 row.innerHTML = `
                     <td><span class="rank-medal rank-${index + 1}">${rankDisplay}</span></td>
@@ -1905,9 +1914,10 @@
                 if (index === 0) badges.push('<span class="badge badge-gold">🏆 Champion</span>');
                 if (index === 1) badges.push('<span class="badge badge-silver">🥈 Vice-Champion</span>');
                 if (index === 2) badges.push('<span class="badge badge-bronze">🥉 3ème</span>');
-                if (player.absent === 0) badges.push('<span class="badge badge-assidu">⭐ Sans Absence</span>');
-                if (player.attendanceRate === 100) badges.push('<span class="badge badge-assidu">💯 Parfait</span>');
+                if (player.absent === 0 && player.retards < 5) badges.push('<span class="badge badge-assidu">⭐ Sans Absence</span>');
+                if (player.attendanceRate === 100 && player.retards < 5) badges.push('<span class="badge badge-assidu">💯 Parfait</span>');
                 if (player.retards === 0 && player.present > 0) badges.push('<span class="badge badge-regulier">⏰ Ponctuel</span>');
+                if (player.retards >= 5) badges.push('<span class="badge badge-warning">⏰ Souvent en Retard</span>');
                 
                 row.innerHTML = `
                     <td><span class="rank-medal rank-${index + 1}">${rankDisplay}</span></td>
