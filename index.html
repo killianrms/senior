@@ -761,9 +761,9 @@
                 <div style="display: flex; align-items: center; gap: 5px;">
                     <label style="color: white; font-size: 14px;">Saison:</label>
                     <select id="seasonYearSelect" onchange="changeSeasonYear(this.value)" style="padding: 4px 8px; border-radius: 10px; border: none; background: rgba(255,255,255,0.9); font-size: 14px;">
-                        <option value="2023">2023-2024</option>
-                        <option value="2024" selected>2024-2025</option>
-                        <option value="2025">2025-2026</option>
+                        <option value="2024">2024-2025</option>
+                        <option value="2025" selected>2025-2026</option>
+                        <option value="2026">2026-2027</option>
                     </select>
                 </div>
             </div>
@@ -1015,8 +1015,8 @@
         let unsubscribeListeners = [];
         let isContrastedTheme = false;
         // Configuration des années de référence
-        let currentSeasonYear = 2024; // Année de début de saison (septembre)
-        let availableYears = [2023, 2024, 2025]; // Années disponibles
+        let currentSeasonYear = 2025; // Année de début de saison (août 2025)
+        let availableYears = [2024, 2025, 2026]; // Années disponibles
 
         // Générer les périodes dynamiquement
         function generateCustomPeriods() {
@@ -1024,34 +1024,70 @@
                 { id: 'all', name: 'Toute la saison', startDate: null, endDate: null }
             ];
 
-            // Ajouter les saisons complètes
-            availableYears.forEach(year => {
-                periods.push({
-                    id: `season${year}`,
-                    name: `Saison ${year}-${year + 1}`,
-                    startDate: `${year}-09-01`,
-                    endDate: `${year}-12-31`
-                });
+            // Ajouter la saison complète 2025-2026 (août 2025 à juin 2026)
+            periods.push({
+                id: 'season2025',
+                name: 'Saison 2025-2026',
+                startDate: '2025-08-01',
+                endDate: '2026-06-30'
             });
 
-            // Ajouter les mois de la saison courante (septembre à décembre)
-            const seasonMonths = [
-                { id: 'sep', name: 'Septembre', month: 9 },
-                { id: 'oct', name: 'Octobre', month: 10 },
-                { id: 'nov', name: 'Novembre', month: 11 },
-                { id: 'dec', name: 'Décembre', month: 12 }
+            // Définir les trimestres selon votre demande
+            const quarters = [
+                {
+                    id: 'q1_2025',
+                    name: 'T1: Sept-Oct-Nov 2025',
+                    startDate: '2025-09-01',
+                    endDate: '2025-11-30'
+                },
+                {
+                    id: 'q2_2025',
+                    name: 'T2: Déc-Jan-Fév 2025-26',
+                    startDate: '2025-12-01',
+                    endDate: '2026-02-28'
+                },
+                {
+                    id: 'q3_2026',
+                    name: 'T3: Mars-Avr-Mai 2026',
+                    startDate: '2026-03-01',
+                    endDate: '2026-05-31'
+                },
+                {
+                    id: 'q4_2026',
+                    name: 'T4: Juin 2026',
+                    startDate: '2026-06-01',
+                    endDate: '2026-06-30'
+                }
             ];
 
+            // Ajouter les trimestres
+            periods.push(...quarters);
+
+            // Définir tous les mois de la saison (août 2025 à juin 2026)
+            const seasonMonths = [
+                { id: 'aug', name: 'Août', month: 8, year: 2025 },
+                { id: 'sep', name: 'Septembre', month: 9, year: 2025 },
+                { id: 'oct', name: 'Octobre', month: 10, year: 2025 },
+                { id: 'nov', name: 'Novembre', month: 11, year: 2025 },
+                { id: 'dec', name: 'Décembre', month: 12, year: 2025 },
+                { id: 'jan', name: 'Janvier', month: 1, year: 2026 },
+                { id: 'feb', name: 'Février', month: 2, year: 2026 },
+                { id: 'mar', name: 'Mars', month: 3, year: 2026 },
+                { id: 'apr', name: 'Avril', month: 4, year: 2026 },
+                { id: 'may', name: 'Mai', month: 5, year: 2026 },
+                { id: 'jun', name: 'Juin', month: 6, year: 2026 }
+            ];
+
+            // Ajouter les mois individuels
             seasonMonths.forEach(monthData => {
-                const year = currentSeasonYear;
                 const monthStr = monthData.month.toString().padStart(2, '0');
-                const daysInMonth = new Date(year, monthData.month, 0).getDate();
+                const daysInMonth = new Date(monthData.year, monthData.month, 0).getDate();
                 
                 periods.push({
-                    id: `${monthData.id}${year}`,
-                    name: `${monthData.name} ${year}`,
-                    startDate: `${year}-${monthStr}-01`,
-                    endDate: `${year}-${monthStr}-${daysInMonth}`
+                    id: `${monthData.id}${monthData.year}`,
+                    name: `${monthData.name} ${monthData.year}`,
+                    startDate: `${monthData.year}-${monthStr}-01`,
+                    endDate: `${monthData.year}-${monthStr}-${daysInMonth}`
                 });
             });
 
