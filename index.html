@@ -821,7 +821,7 @@
                     <button class="btn btn-primary" onclick="showManagePlayersModal()">👥 Gérer Joueurs</button>
                     <button class="btn btn-secondary" onclick="showManageDatesModal()">📅 Gérer Dates</button>
                     <button class="btn btn-warning" onclick="showManagePeriodsModal()">⏱️ Gérer Périodes</button>
-                    <button class="btn btn-danger" onclick="showScheduledAbsencesModal()">🗓️ Absences Programmées</button>
+                    <button class="btn btn-danger" onclick="showScheduledAbsencesModal()">🗓️ Statuts Programmés</button>
                     <button class="btn btn-info" onclick="showExportPDFModal()">📊 Export PDF Personnalisé</button>
                     <button class="btn btn-success" onclick="saveData()" id="saveBtn">💾 Sauvegarder</button>
                 </div>
@@ -2396,12 +2396,12 @@
             sessions.sort((a, b) => a.date.localeCompare(b.date));
             
             // Initialiser les présences pour cette session avec REPOS par défaut
-            // ou appliquer les absences programmées
+            // ou appliquer les statuts programmés
             players.forEach(player => {
-                const scheduledAbsence = getScheduledAbsence(player.id, newSession.date);
-                if (scheduledAbsence) {
-                    // Appliquer l'absence programmée
-                    presences[player.id][newSession.id] = scheduledAbsence.absenceType;
+                const scheduledStatus = getScheduledAbsence(player.id, newSession.date);
+                if (scheduledStatus) {
+                    // Appliquer le statut programmé
+                    presences[player.id][newSession.id] = scheduledStatus.absenceType;
                 } else {
                     // Statut REPOS par défaut
                     presences[player.id][newSession.id] = 'rep';
@@ -2841,10 +2841,10 @@
             const today = new Date().toISOString().split('T')[0];
             
             let modalHtml = `
-                <h2>🗓️ Gestion des Absences Programmées</h2>
+                <h2>🗓️ Gestion des Statuts Programmés</h2>
                 
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-                    <h3>➕ Programmer une nouvelle absence</h3>
+                    <h3>➕ Programmer un nouveau statut</h3>
                     <form onsubmit="addScheduledAbsence(event)">
                         <div class="form-group" style="margin-bottom: 15px;">
                             <label>Joueur :</label>
@@ -2854,11 +2854,18 @@
                             </select>
                         </div>
                         <div class="form-group" style="margin-bottom: 15px;">
-                            <label>Type d'absence :</label>
+                            <label>Statut à appliquer :</label>
                             <select name="absenceType" required style="width: 100%; padding: 8px;">
+                                <option value="pst">Présent (PST)</option>
                                 <option value="abp">Absent Prévenu (AbP)</option>
-                                <option value="vac">Vacances (VAC)</option>
+                                <option value="absp">Absent Sans Prévenir (AbSP)</option>
                                 <option value="bls">Blessé (BLS)</option>
+                                <option value="vac">Vacances (VAC)</option>
+                                <option value="rep">Repos (REP)</option>
+                                <option value="ca">Convoqué A (Ca)</option>
+                                <option value="cb">Convoqué B (Cb)</option>
+                                <option value="cc">Convoqué C (Cc)</option>
+                                <option value="ret">Retard (RET)</option>
                             </select>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
@@ -2875,16 +2882,16 @@
                             <label>Commentaire (optionnel) :</label>
                             <input type="text" name="comment" placeholder="Ex: Vacances en famille" style="width: 100%; padding: 8px;">
                         </div>
-                        <button type="submit" class="btn btn-primary">➕ Programmer l'absence</button>
+                        <button type="submit" class="btn btn-primary">➕ Programmer le statut</button>
                     </form>
                 </div>
                 
                 <div style="max-height: 400px; overflow-y: auto;">
-                    <h3>📋 Absences programmées</h3>
+                    <h3>📋 Statuts programmés</h3>
             `;
             
             if (scheduledAbsences.length === 0) {
-                modalHtml += '<p style="color: #666;">Aucune absence programmée.</p>';
+                modalHtml += '<p style="color: #666;">Aucun statut programmé.</p>';
             } else {
                 modalHtml += `
                     <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
@@ -2906,9 +2913,16 @@
                     const startDate = new Date(absence.startDate).toLocaleDateString('fr-FR');
                     const endDate = new Date(absence.endDate).toLocaleDateString('fr-FR');
                     const typeText = {
+                        'pst': 'Présent',
                         'abp': 'Absent Prévenu',
-                        'vac': 'Vacances', 
-                        'bls': 'Blessé'
+                        'absp': 'Absent Sans Prévenir',
+                        'bls': 'Blessé',
+                        'vac': 'Vacances',
+                        'rep': 'Repos',
+                        'ca': 'Convoqué A',
+                        'cb': 'Convoqué B', 
+                        'cc': 'Convoqué C',
+                        'ret': 'Retard'
                     };
                     
                     modalHtml += `
@@ -2966,14 +2980,14 @@
             const player = players.find(p => p.id === absence.playerId);
             const playerName = player ? `${player.prenom} ${player.nom}` : 'Joueur';
             
-            if (confirm(`Êtes-vous sûr de vouloir supprimer l'absence programmée de ${playerName} ?`)) {
+            if (confirm(`Êtes-vous sûr de vouloir supprimer le statut programmé de ${playerName} ?`)) {
                 scheduledAbsences.splice(index, 1);
                 autoSave();
                 showScheduledAbsencesModal(); // Recharger la modal
             }
         }
 
-        // Vérifier si un joueur a une absence programmée à une date donnée
+        // Vérifier si un joueur a un statut programmé à une date donnée
         function getScheduledAbsence(playerId, date) {
             const sessionDate = new Date(date);
             
