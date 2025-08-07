@@ -1631,16 +1631,16 @@
                     };
                     
                     const options = [
-                        { value: 'pst', text: 'PST', class: 'opt-pst' },
-                        { value: 'abp', text: 'AbP', class: 'opt-abp' },
-                        { value: 'absp', text: 'AbSP', class: 'opt-absp' },
-                        { value: 'bls', text: 'BLS', class: 'opt-bls' },
-                        { value: 'vac', text: 'VAC', class: 'opt-vac' },
-                        { value: 'rep', text: 'REP', class: 'opt-rep' },
-                        { value: 'ca', text: 'Ca', class: 'opt-ca' },
-                        { value: 'cb', text: 'Cb', class: 'opt-cb' },
-                        { value: 'cc', text: 'Cc', class: 'opt-cc' },
-                        { value: 'ret', text: 'RET', class: 'opt-ret' }
+                        { value: 'pst', text: 'Présent', class: 'opt-pst' },
+                        { value: 'abp', text: 'Absent Prévenu', class: 'opt-abp' },
+                        { value: 'absp', text: 'Absent Sans Prévenir', class: 'opt-absp' },
+                        { value: 'bls', text: 'Blessé', class: 'opt-bls' },
+                        { value: 'vac', text: 'Vacances', class: 'opt-vac' },
+                        { value: 'rep', text: 'Repos', class: 'opt-rep' },
+                        { value: 'ca', text: 'Convoqué A', class: 'opt-ca' },
+                        { value: 'cb', text: 'Convoqué B', class: 'opt-cb' },
+                        { value: 'cc', text: 'Convoqué C', class: 'opt-cc' },
+                        { value: 'ret', text: 'Retard', class: 'opt-ret' }
                     ];
                     
                     options.forEach(opt => {
@@ -1775,16 +1775,16 @@
                     };
                     
                     const options = [
-                        { value: 'pst', text: 'PST', class: 'opt-pst' },
-                        { value: 'abp', text: 'AbP', class: 'opt-abp' },
-                        { value: 'absp', text: 'AbSP', class: 'opt-absp' },
-                        { value: 'bls', text: 'BLS', class: 'opt-bls' },
-                        { value: 'vac', text: 'VAC', class: 'opt-vac' },
-                        { value: 'rep', text: 'REP', class: 'opt-rep' },
-                        { value: 'ca', text: 'Ca', class: 'opt-ca' },
-                        { value: 'cb', text: 'Cb', class: 'opt-cb' },
-                        { value: 'cc', text: 'Cc', class: 'opt-cc' },
-                        { value: 'ret', text: 'RET', class: 'opt-ret' }
+                        { value: 'pst', text: 'Présent', class: 'opt-pst' },
+                        { value: 'abp', text: 'Absent Prévenu', class: 'opt-abp' },
+                        { value: 'absp', text: 'Absent Sans Prévenir', class: 'opt-absp' },
+                        { value: 'bls', text: 'Blessé', class: 'opt-bls' },
+                        { value: 'vac', text: 'Vacances', class: 'opt-vac' },
+                        { value: 'rep', text: 'Repos', class: 'opt-rep' },
+                        { value: 'ca', text: 'Convoqué A', class: 'opt-ca' },
+                        { value: 'cb', text: 'Convoqué B', class: 'opt-cb' },
+                        { value: 'cc', text: 'Convoqué C', class: 'opt-cc' },
+                        { value: 'ret', text: 'Retard', class: 'opt-ret' }
                     ];
                     
                     options.forEach(opt => {
@@ -2389,9 +2389,9 @@
             sessions.push(newSession);
             sessions.sort((a, b) => a.date.localeCompare(b.date));
             
-            // Initialiser les présences pour cette session
+            // Initialiser les présences pour cette session avec REPOS par défaut
             players.forEach(player => {
-                presences[player.id][newSession.id] = 'pst';
+                presences[player.id][newSession.id] = 'rep';
             });
             
             updateStats();
