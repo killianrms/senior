@@ -216,6 +216,11 @@
             color: #333;
         }
 
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
@@ -816,6 +821,7 @@
                     <button class="btn btn-primary" onclick="showManagePlayersModal()">👥 Gérer Joueurs</button>
                     <button class="btn btn-secondary" onclick="showManageDatesModal()">📅 Gérer Dates</button>
                     <button class="btn btn-warning" onclick="showManagePeriodsModal()">⏱️ Gérer Périodes</button>
+                    <button class="btn btn-info" onclick="showExportPDFModal()">📊 Export PDF Personnalisé</button>
                     <button class="btn btn-success" onclick="saveData()" id="saveBtn">💾 Sauvegarder</button>
                 </div>
             </div>
@@ -1622,7 +1628,6 @@
                     select.value = status;
                     select.onchange = function() {
                         updatePresence(player.id, session.id, this.value);
-                        this.className = `presence-cell status-${this.value}`;
                     };
                     
                     const options = [
@@ -1659,6 +1664,8 @@
             presences[playerId][sessionId] = status;
             updateStats();
             autoSave();
+            // Re-render pour s'assurer que les couleurs sont correctement appliquées
+            renderPresenceTable();
         }
 
         // Fonction de tri des joueurs
@@ -1765,7 +1772,6 @@
                     select.value = status;
                     select.onchange = function() {
                         updatePresence(player.id, session.id, this.value);
-                        this.className = `presence-cell status-${this.value}`;
                     };
                     
                     const options = [
@@ -2245,9 +2251,9 @@
             players.push(newPlayer);
             presences[newPlayer.id] = {};
             
-            // Initialiser les présences pour ce joueur
+            // Initialiser les présences pour ce joueur avec REPOS par défaut
             sessions.forEach(session => {
-                presences[newPlayer.id][session.id] = 'pst';
+                presences[newPlayer.id][session.id] = 'rep';
             });
             
             updateStats();
@@ -2809,6 +2815,304 @@
             doc.text('Généré avec Claude Code', 105, doc.internal.pageSize.height - 10, { align: 'center' });
             
             doc.save('classement_assiduites_senior.pdf');
+        }
+
+        // Modal pour l'export PDF personnalisé
+        function showExportPDFModal() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            let modalHtml = `
+                <h2>📊 Export PDF Personnalisé</h2>
+                
+                <div style="background: #f8f9ff; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3>🗓️ Sélectionner la période</h3>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 10px;">
+                            <input type="radio" name="periodType" value="single" checked onchange="updatePeriodInputs()">
+                            Un seul entraînement
+                        </label>
+                        <label style="display: block; margin-bottom: 10px;">
+                            <input type="radio" name="periodType" value="week" onchange="updatePeriodInputs()">
+                            Une semaine complète
+                        </label>
+                        <label style="display: block; margin-bottom: 10px;">
+                            <input type="radio" name="periodType" value="month" onchange="updatePeriodInputs()">
+                            Un mois entier
+                        </label>
+                        <label style="display: block; margin-bottom: 10px;">
+                            <input type="radio" name="periodType" value="range" onchange="updatePeriodInputs()">
+                            Période personnalisée
+                        </label>
+                    </div>
+                    
+                    <div id="periodInputs">
+                        <div class="form-group">
+                            <label>Sélectionner l'entraînement :</label>
+                            <select id="singleSession" style="width: 100%; padding: 8px;">
+                                ${sessions.map(s => `<option value="${s.id}">${s.type} - ${new Date(s.date).toLocaleDateString('fr-FR')}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="previewSection" style="margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 8px;">
+                        <h4>Aperçu des données</h4>
+                        <p id="previewText">Sélectionnez une période pour voir l'aperçu</p>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <button class="btn btn-success" onclick="generateCustomPDF()">📄 Générer le PDF</button>
+                        <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+                    </div>
+                </div>
+            `;
+            
+            showModal(modalHtml);
+            updatePeriodInputs();
+        }
+
+        // Mettre à jour les champs selon le type de période sélectionné
+        function updatePeriodInputs() {
+            const periodType = document.querySelector('input[name="periodType"]:checked').value;
+            const periodInputsDiv = document.getElementById('periodInputs');
+            const today = new Date().toISOString().split('T')[0];
+            
+            let inputsHtml = '';
+            
+            switch(periodType) {
+                case 'single':
+                    inputsHtml = `
+                        <div class="form-group">
+                            <label>Sélectionner l'entraînement :</label>
+                            <select id="singleSession" style="width: 100%; padding: 8px;" onchange="updatePreview()">
+                                ${sessions.map(s => `<option value="${s.id}">${s.type} - ${new Date(s.date).toLocaleDateString('fr-FR')}</option>`).join('')}
+                            </select>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'week':
+                    inputsHtml = `
+                        <div class="form-group">
+                            <label>Sélectionner la semaine :</label>
+                            <input type="week" id="weekSelect" value="${getCurrentWeek()}" style="width: 100%; padding: 8px;" onchange="updatePreview()">
+                        </div>
+                    `;
+                    break;
+                    
+                case 'month':
+                    inputsHtml = `
+                        <div class="form-group">
+                            <label>Sélectionner le mois :</label>
+                            <input type="month" id="monthSelect" value="${today.substring(0, 7)}" style="width: 100%; padding: 8px;" onchange="updatePreview()">
+                        </div>
+                    `;
+                    break;
+                    
+                case 'range':
+                    inputsHtml = `
+                        <div class="form-group">
+                            <label>Date de début :</label>
+                            <input type="date" id="startDate" value="${today}" style="width: 100%; padding: 8px;" onchange="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>Date de fin :</label>
+                            <input type="date" id="endDate" value="${today}" style="width: 100%; padding: 8px;" onchange="updatePreview()">
+                        </div>
+                    `;
+                    break;
+            }
+            
+            periodInputsDiv.innerHTML = inputsHtml;
+            updatePreview();
+        }
+
+        // Obtenir la semaine actuelle au format YYYY-Www
+        function getCurrentWeek() {
+            const date = new Date();
+            const year = date.getFullYear();
+            const oneJan = new Date(date.getFullYear(), 0, 1);
+            const numberOfDays = Math.floor((date - oneJan) / (24 * 60 * 60 * 1000));
+            const weekNumber = Math.ceil((date.getDay() + 1 + numberOfDays) / 7);
+            return `${year}-W${weekNumber.toString().padStart(2, '0')}`;
+        }
+
+        // Mettre à jour l'aperçu
+        function updatePreview() {
+            const periodType = document.querySelector('input[name="periodType"]:checked').value;
+            const previewText = document.getElementById('previewText');
+            
+            const filteredSessions = getFilteredSessions();
+            
+            if (filteredSessions.length === 0) {
+                previewText.textContent = 'Aucune session trouvée pour cette période';
+            } else {
+                previewText.innerHTML = `
+                    <strong>Sessions trouvées :</strong> ${filteredSessions.length}<br>
+                    <strong>Première session :</strong> ${new Date(filteredSessions[0].date).toLocaleDateString('fr-FR')}<br>
+                    <strong>Dernière session :</strong> ${new Date(filteredSessions[filteredSessions.length - 1].date).toLocaleDateString('fr-FR')}
+                `;
+            }
+        }
+
+        // Obtenir les sessions filtrées selon la période sélectionnée
+        function getFilteredSessions() {
+            const periodType = document.querySelector('input[name="periodType"]:checked').value;
+            let filteredSessions = [];
+            
+            switch(periodType) {
+                case 'single':
+                    const sessionId = document.getElementById('singleSession').value;
+                    filteredSessions = sessions.filter(s => s.id == sessionId);
+                    break;
+                    
+                case 'week':
+                    const weekValue = document.getElementById('weekSelect').value;
+                    if (weekValue) {
+                        const [year, week] = weekValue.split('-W');
+                        const startDate = getDateOfWeek(parseInt(week), parseInt(year));
+                        const endDate = new Date(startDate);
+                        endDate.setDate(endDate.getDate() + 6);
+                        
+                        filteredSessions = sessions.filter(s => {
+                            const sessionDate = new Date(s.date);
+                            return sessionDate >= startDate && sessionDate <= endDate;
+                        });
+                    }
+                    break;
+                    
+                case 'month':
+                    const monthValue = document.getElementById('monthSelect').value;
+                    if (monthValue) {
+                        const [year, month] = monthValue.split('-');
+                        filteredSessions = sessions.filter(s => {
+                            const sessionDate = new Date(s.date);
+                            return sessionDate.getFullYear() == year && (sessionDate.getMonth() + 1) == month;
+                        });
+                    }
+                    break;
+                    
+                case 'range':
+                    const startDate = new Date(document.getElementById('startDate').value);
+                    const endDate = new Date(document.getElementById('endDate').value);
+                    
+                    filteredSessions = sessions.filter(s => {
+                        const sessionDate = new Date(s.date);
+                        return sessionDate >= startDate && sessionDate <= endDate;
+                    });
+                    break;
+            }
+            
+            return filteredSessions.sort((a, b) => new Date(a.date) - new Date(b.date));
+        }
+
+        // Obtenir la date du début d'une semaine
+        function getDateOfWeek(week, year) {
+            const date = new Date(year, 0, 1);
+            const dayOfWeek = date.getDay();
+            const daysToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+            date.setDate(date.getDate() + daysToMonday);
+            date.setDate(date.getDate() + (week - 1) * 7);
+            return date;
+        }
+
+        // Générer le PDF personnalisé
+        function generateCustomPDF() {
+            const filteredSessions = getFilteredSessions();
+            
+            if (filteredSessions.length === 0) {
+                alert('Aucune session trouvée pour cette période');
+                return;
+            }
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape');
+            
+            // En-tête
+            doc.setFontSize(20);
+            doc.text('Senior - Rapport de Présences', 148, 20, { align: 'center' });
+            
+            // Période
+            doc.setFontSize(12);
+            const periodType = document.querySelector('input[name="periodType"]:checked').value;
+            let periodText = '';
+            
+            switch(periodType) {
+                case 'single':
+                    periodText = `Session du ${new Date(filteredSessions[0].date).toLocaleDateString('fr-FR')}`;
+                    break;
+                case 'week':
+                    periodText = `Semaine du ${new Date(filteredSessions[0].date).toLocaleDateString('fr-FR')} au ${new Date(filteredSessions[filteredSessions.length - 1].date).toLocaleDateString('fr-FR')}`;
+                    break;
+                case 'month':
+                    const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+                    const sessionDate = new Date(filteredSessions[0].date);
+                    periodText = `${monthNames[sessionDate.getMonth()]} ${sessionDate.getFullYear()}`;
+                    break;
+                case 'range':
+                    periodText = `Du ${new Date(filteredSessions[0].date).toLocaleDateString('fr-FR')} au ${new Date(filteredSessions[filteredSessions.length - 1].date).toLocaleDateString('fr-FR')}`;
+                    break;
+            }
+            
+            doc.text(periodText, 148, 30, { align: 'center' });
+            
+            // Préparer les données du tableau
+            const tableData = players.map(player => {
+                const row = [player.prenom, player.nom];
+                let totalPresent = 0;
+                let totalAbsent = 0;
+                
+                filteredSessions.forEach(session => {
+                    const status = presences[player.id][session.id];
+                    row.push(status.toUpperCase());
+                    
+                    if (status === 'pst' || status === 'ca' || status === 'cb' || status === 'cc') {
+                        totalPresent++;
+                    } else if (status === 'abp' || status === 'absp' || status === 'bls') {
+                        totalAbsent++;
+                    }
+                });
+                
+                // Ajouter les totaux
+                const rate = filteredSessions.length > 0 ? Math.round((totalPresent / filteredSessions.length) * 100) : 0;
+                row.push(totalPresent.toString());
+                row.push(totalAbsent.toString());
+                row.push(`${rate}%`);
+                
+                return row;
+            });
+            
+            // Headers du tableau
+            const headers = ['Prénom', 'Nom'];
+            filteredSessions.forEach(session => {
+                headers.push(new Date(session.date).toLocaleDateString('fr-FR').substring(0, 5));
+            });
+            headers.push('Présences', 'Absences', 'Taux');
+            
+            // Générer le tableau
+            doc.autoTable({
+                head: [headers],
+                body: tableData,
+                startY: 40,
+                theme: 'grid',
+                headStyles: { fillColor: [33, 150, 243] },
+                styles: { fontSize: 8, cellPadding: 2 },
+                columnStyles: {
+                    0: { cellWidth: 25 },
+                    1: { cellWidth: 25 }
+                }
+            });
+            
+            // Légende
+            const finalY = doc.lastAutoTable.finalY + 10;
+            doc.setFontSize(10);
+            doc.text('Légende: PST=Présent, AbP=Absent Prévenu, AbSP=Absent Sans Prévenir, BLS=Blessé, VAC=Vacances, REP=Repos, RET=Retard', 14, finalY);
+            
+            // Sauvegarder le PDF
+            const fileName = `presences_senior_${periodText.replace(/\//g, '-').replace(/ /g, '_')}.pdf`;
+            doc.save(fileName);
+            
+            closeModal();
         }
 
     </script>
