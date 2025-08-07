@@ -821,6 +821,7 @@
                     <button class="btn btn-primary" onclick="showManagePlayersModal()">👥 Gérer Joueurs</button>
                     <button class="btn btn-secondary" onclick="showManageDatesModal()">📅 Gérer Dates</button>
                     <button class="btn btn-warning" onclick="showManagePeriodsModal()">⏱️ Gérer Périodes</button>
+                    <button class="btn btn-danger" onclick="showScheduledAbsencesModal()">🗓️ Absences Programmées</button>
                     <button class="btn btn-info" onclick="showExportPDFModal()">📊 Export PDF Personnalisé</button>
                     <button class="btn btn-success" onclick="saveData()" id="saveBtn">💾 Sauvegarder</button>
                 </div>
@@ -1052,6 +1053,7 @@
         let players = [];
         let sessions = [];
         let presences = {};
+        let scheduledAbsences = []; // Nouvelle variable pour les absences programmées
         let currentPeriod = 'all';
         let currentSort = 'default';
         let isFirebaseInitialized = false;
@@ -2394,8 +2396,16 @@
             sessions.sort((a, b) => a.date.localeCompare(b.date));
             
             // Initialiser les présences pour cette session avec REPOS par défaut
+            // ou appliquer les absences programmées
             players.forEach(player => {
-                presences[player.id][newSession.id] = 'rep';
+                const scheduledAbsence = getScheduledAbsence(player.id, newSession.date);
+                if (scheduledAbsence) {
+                    // Appliquer l'absence programmée
+                    presences[player.id][newSession.id] = scheduledAbsence.absenceType;
+                } else {
+                    // Statut REPOS par défaut
+                    presences[player.id][newSession.id] = 'rep';
+                }
             });
             
             updateStats();
@@ -2479,7 +2489,8 @@
                     players,
                     sessions,
                     presences,
-                    customPeriods
+                    customPeriods,
+                    scheduledAbsences
                 };
                 localStorage.setItem('senior2526Data', JSON.stringify(data));
                 alert('Données sauvegardées localement !');
@@ -2496,7 +2507,8 @@
                     players,
                     sessions,
                     presences,
-                    customPeriods
+                    customPeriods,
+                    scheduledAbsences
                 };
                 localStorage.setItem('senior2526Data', JSON.stringify(data));
             }
@@ -2513,6 +2525,7 @@
                     sessions,
                     presences,
                     customPeriods,
+                    scheduledAbsences,
                     lastUpdated: new Date().toISOString()
                 };
                 
@@ -2536,13 +2549,14 @@
                         console.log('🔄 Données mises à jour depuis Firebase');
                         
                         // Vérifier si les données ont changé pour éviter les mises à jour inutiles
-                        const hasChanged = JSON.stringify({players, sessions, presences, customPeriods}) !== 
-                                         JSON.stringify({players: data.players || [], sessions: data.sessions || [], presences: data.presences || {}, customPeriods: data.customPeriods});
+                        const hasChanged = JSON.stringify({players, sessions, presences, customPeriods, scheduledAbsences}) !== 
+                                         JSON.stringify({players: data.players || [], sessions: data.sessions || [], presences: data.presences || {}, customPeriods: data.customPeriods, scheduledAbsences: data.scheduledAbsences || []});
                         
                         if (hasChanged) {
                             players = data.players || [];
                             sessions = data.sessions || [];
                             presences = data.presences || {};
+                            scheduledAbsences = data.scheduledAbsences || [];
                             if (data.customPeriods) {
                                 customPeriods = data.customPeriods;
                             }
@@ -2586,6 +2600,7 @@
                 players = data.players || [];
                 sessions = data.sessions || [];
                 presences = data.presences || {};
+                scheduledAbsences = data.scheduledAbsences || [];
                 if (data.customPeriods) {
                     customPeriods = data.customPeriods;
                 }
@@ -2819,6 +2834,157 @@
             doc.text('Généré avec Claude Code', 105, doc.internal.pageSize.height - 10, { align: 'center' });
             
             doc.save('classement_assiduites_senior.pdf');
+        }
+
+        // Modal pour gérer les absences programmées
+        function showScheduledAbsencesModal() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            let modalHtml = `
+                <h2>🗓️ Gestion des Absences Programmées</h2>
+                
+                <div style="background: #f8f9ff; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3>➕ Programmer une nouvelle absence</h3>
+                    <form onsubmit="addScheduledAbsence(event)">
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label>Joueur :</label>
+                            <select name="playerId" required style="width: 100%; padding: 8px;">
+                                <option value="">-- Sélectionner un joueur --</option>
+                                ${players.map(player => `<option value="${player.id}">${player.prenom} ${player.nom}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label>Type d'absence :</label>
+                            <select name="absenceType" required style="width: 100%; padding: 8px;">
+                                <option value="abp">Absent Prévenu (AbP)</option>
+                                <option value="vac">Vacances (VAC)</option>
+                                <option value="bls">Blessé (BLS)</option>
+                            </select>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div class="form-group">
+                                <label>Date de début :</label>
+                                <input type="date" name="startDate" value="${today}" required style="width: 100%; padding: 8px;">
+                            </div>
+                            <div class="form-group">
+                                <label>Date de fin :</label>
+                                <input type="date" name="endDate" value="${today}" required style="width: 100%; padding: 8px;">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label>Commentaire (optionnel) :</label>
+                            <input type="text" name="comment" placeholder="Ex: Vacances en famille" style="width: 100%; padding: 8px;">
+                        </div>
+                        <button type="submit" class="btn btn-primary">➕ Programmer l'absence</button>
+                    </form>
+                </div>
+                
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <h3>📋 Absences programmées</h3>
+            `;
+            
+            if (scheduledAbsences.length === 0) {
+                modalHtml += '<p style="color: #666;">Aucune absence programmée.</p>';
+            } else {
+                modalHtml += `
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                        <thead>
+                            <tr style="background: #f5f5f5;">
+                                <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Joueur</th>
+                                <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Type</th>
+                                <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Période</th>
+                                <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Commentaire</th>
+                                <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                scheduledAbsences.forEach((absence, index) => {
+                    const player = players.find(p => p.id === absence.playerId);
+                    const playerName = player ? `${player.prenom} ${player.nom}` : 'Joueur supprimé';
+                    const startDate = new Date(absence.startDate).toLocaleDateString('fr-FR');
+                    const endDate = new Date(absence.endDate).toLocaleDateString('fr-FR');
+                    const typeText = {
+                        'abp': 'Absent Prévenu',
+                        'vac': 'Vacances', 
+                        'bls': 'Blessé'
+                    };
+                    
+                    modalHtml += `
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid #ddd;">${playerName}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd;">
+                                <span class="status-${absence.absenceType}" style="padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px;">
+                                    ${typeText[absence.absenceType]}
+                                </span>
+                            </td>
+                            <td style="padding: 12px; border: 1px solid #ddd;">${startDate} → ${endDate}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd;">${absence.comment || '-'}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd;">
+                                <button class="btn btn-danger" onclick="deleteScheduledAbsence(${index})" style="font-size: 12px;">🗑️ Supprimer</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                modalHtml += '</tbody></table>';
+            }
+            
+            modalHtml += '</div><br><button type="button" class="btn btn-secondary" onclick="closeModal()">Fermer</button>';
+            showModal(modalHtml);
+        }
+
+        // Ajouter une absence programmée
+        function addScheduledAbsence(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            
+            const newAbsence = {
+                id: Date.now(),
+                playerId: parseInt(formData.get('playerId')),
+                absenceType: formData.get('absenceType'),
+                startDate: formData.get('startDate'),
+                endDate: formData.get('endDate'),
+                comment: formData.get('comment') || ''
+            };
+            
+            // Vérifier que la date de fin est après la date de début
+            if (new Date(newAbsence.endDate) < new Date(newAbsence.startDate)) {
+                alert('La date de fin doit être après la date de début !');
+                return;
+            }
+            
+            scheduledAbsences.push(newAbsence);
+            autoSave();
+            showScheduledAbsencesModal(); // Recharger la modal
+        }
+
+        // Supprimer une absence programmée
+        function deleteScheduledAbsence(index) {
+            const absence = scheduledAbsences[index];
+            const player = players.find(p => p.id === absence.playerId);
+            const playerName = player ? `${player.prenom} ${player.nom}` : 'Joueur';
+            
+            if (confirm(`Êtes-vous sûr de vouloir supprimer l'absence programmée de ${playerName} ?`)) {
+                scheduledAbsences.splice(index, 1);
+                autoSave();
+                showScheduledAbsencesModal(); // Recharger la modal
+            }
+        }
+
+        // Vérifier si un joueur a une absence programmée à une date donnée
+        function getScheduledAbsence(playerId, date) {
+            const sessionDate = new Date(date);
+            
+            return scheduledAbsences.find(absence => {
+                if (absence.playerId !== playerId) return false;
+                
+                const startDate = new Date(absence.startDate);
+                const endDate = new Date(absence.endDate);
+                
+                return sessionDate >= startDate && sessionDate <= endDate;
+            });
         }
 
         // Modal pour l'export PDF personnalisé
