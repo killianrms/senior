@@ -773,76 +773,267 @@
                 text-overflow: ellipsis;
             }
 
-            /* Tableau de présences mobile révolutionnaire */
-            .presence-table-container {
-                margin: 15px -8px 0 -8px;
-                padding: 0 8px;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                border-radius: 8px;
+            /* ===== INTERFACE MOBILE CARDS RÉVOLUTIONNAIRE ===== */
+            .mobile-presence-container {
+                display: none; /* Masqué par défaut, affiché seulement sur mobile */
+                padding: 10px 8px;
+            }
+            
+            /* Afficher les cards seulement sur mobile */
+            .mobile-presence-container.active {
+                display: block;
+            }
+            
+            /* Masquer le tableau sur mobile quand les cards sont actives */
+            .presence-table-container.mobile-hidden {
+                display: none !important;
+            }
+
+            /* Sélecteur de session mobile */
+            .mobile-session-selector {
+                background: white;
+                border-radius: 12px;
+                padding: 15px;
+                margin-bottom: 15px;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             }
 
-            .presence-table {
-                font-size: 11px;
-                width: 100%;
-                border-collapse: separate;
-                border-spacing: 0;
-                background: white;
+            .mobile-session-selector h3 {
+                margin: 0 0 12px 0;
+                font-size: 1.1em;
+                color: #2c3e50;
+                text-align: center;
+            }
+
+            .session-buttons {
+                display: flex;
+                gap: 8px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding: 5px 0;
+            }
+
+            .session-btn {
+                flex: 0 0 auto;
+                padding: 12px 16px;
+                background: #f8f9fa;
+                border: 2px solid #e9ecef;
                 border-radius: 8px;
+                font-size: 0.9em;
+                font-weight: 600;
+                text-align: center;
+                cursor: pointer;
+                transition: all 0.2s;
+                white-space: nowrap;
+                min-width: 100px;
+            }
+
+            .session-btn.active {
+                background: #007bff;
+                color: white;
+                border-color: #0056b3;
+                transform: scale(1.05);
+            }
+
+            .session-btn .session-date {
+                display: block;
+                font-size: 0.8em;
+                opacity: 0.8;
+            }
+
+            .session-btn .session-type {
+                display: block;
+                font-size: 0.7em;
+                margin-top: 2px;
+            }
+
+            /* Cards des joueurs */
+            .mobile-players-list {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .mobile-player-card {
+                background: white;
+                border-radius: 12px;
+                padding: 16px;
+                box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+                border: 2px solid transparent;
+                transition: all 0.3s ease;
+            }
+
+            .mobile-player-card.status-pst { border-color: #28a745; background: #f8fff9; }
+            .mobile-player-card.status-abp { border-color: #ffc107; background: #fffef8; }
+            .mobile-player-card.status-absp { border-color: #dc3545; background: #fff8f8; }
+            .mobile-player-card.status-bls { border-color: #fd7e14; background: #fff9f5; }
+            .mobile-player-card.status-vac { border-color: #17a2b8; background: #f8fcfd; }
+            .mobile-player-card.status-rep { border-color: #6c757d; background: #f8f9fa; }
+            .mobile-player-card.status-ca { border-color: #28a745; background: #f0fff4; }
+            .mobile-player-card.status-cb { border-color: #28a745; background: #f0fff4; }
+            .mobile-player-card.status-cc { border-color: #28a745; background: #f0fff4; }
+            .mobile-player-card.status-ret { border-color: #ffc107; background: #fffdf0; }
+
+            .mobile-player-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+            }
+
+            .mobile-player-name {
+                font-size: 1.1em;
+                font-weight: 700;
+                color: #2c3e50;
+            }
+
+            .mobile-current-status {
+                padding: 6px 12px;
+                border-radius: 20px;
+                font-size: 0.8em;
+                font-weight: 600;
+                color: white;
+                text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            }
+
+            /* Grille de boutons de statut */
+            .mobile-status-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+                margin-top: 5px;
+            }
+
+            .mobile-status-btn {
+                padding: 12px 8px;
+                border: 2px solid transparent;
+                border-radius: 8px;
+                font-size: 0.85em;
+                font-weight: 600;
+                text-align: center;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                position: relative;
                 overflow: hidden;
             }
 
-            .presence-table th {
-                padding: 8px 4px;
-                font-size: 10px;
-                font-weight: 600;
-                position: sticky;
-                top: 0;
-                background: #343a40;
+            .mobile-status-btn:active {
+                transform: scale(0.95);
+            }
+
+            .mobile-status-btn.selected {
+                transform: scale(1.05);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                z-index: 2;
+            }
+
+            /* Couleurs des boutons de statut */
+            .mobile-status-btn.btn-pst { background: #28a745; color: white; }
+            .mobile-status-btn.btn-abp { background: #ffc107; color: #333; }
+            .mobile-status-btn.btn-absp { background: #dc3545; color: white; }
+            .mobile-status-btn.btn-bls { background: #fd7e14; color: white; }
+            .mobile-status-btn.btn-vac { background: #17a2b8; color: white; }
+            .mobile-status-btn.btn-rep { background: #6c757d; color: white; }
+            .mobile-status-btn.btn-ca { background: #20c997; color: white; }
+            .mobile-status-btn.btn-cb { background: #20c997; color: white; }
+            .mobile-status-btn.btn-cc { background: #20c997; color: white; }
+            .mobile-status-btn.btn-ret { background: #e83e8c; color: white; }
+
+            .mobile-status-btn.btn-pst.selected { box-shadow: 0 0 0 3px rgba(40,167,69,0.3); }
+            .mobile-status-btn.btn-abp.selected { box-shadow: 0 0 0 3px rgba(255,193,7,0.3); }
+            .mobile-status-btn.btn-absp.selected { box-shadow: 0 0 0 3px rgba(220,53,69,0.3); }
+            .mobile-status-btn.btn-bls.selected { box-shadow: 0 0 0 3px rgba(253,126,20,0.3); }
+            .mobile-status-btn.btn-vac.selected { box-shadow: 0 0 0 3px rgba(23,162,184,0.3); }
+            .mobile-status-btn.btn-rep.selected { box-shadow: 0 0 0 3px rgba(108,117,125,0.3); }
+            .mobile-status-btn.btn-ca.selected { box-shadow: 0 0 0 3px rgba(32,201,151,0.3); }
+            .mobile-status-btn.btn-cb.selected { box-shadow: 0 0 0 3px rgba(32,201,151,0.3); }
+            .mobile-status-btn.btn-cc.selected { box-shadow: 0 0 0 3px rgba(32,201,151,0.3); }
+            .mobile-status-btn.btn-ret.selected { box-shadow: 0 0 0 3px rgba(232,62,140,0.3); }
+
+            /* Toggle pour passer entre vue tableau et vue cards */
+            .mobile-view-toggle {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: #007bff;
                 color: white;
-                z-index: 10;
-            }
-
-            .presence-table td {
-                padding: 6px 4px;
-                border-bottom: 1px solid #e9ecef;
-            }
-
-            /* Première colonne fixe (noms) */
-            .presence-table th:first-child,
-            .presence-table td:first-child {
-                position: sticky;
-                left: 0;
-                background: white;
-                z-index: 5;
-                border-right: 2px solid #dee2e6;
-                font-weight: 600;
-                min-width: 80px;
-                max-width: 80px;
-                font-size: 10px;
-            }
-
-            .presence-table th:first-child {
-                background: #343a40;
-                color: white;
-                z-index: 15;
-            }
-
-            /* Cellules de statut mobiles */
-            .presence-cell {
-                width: 50px;
-                height: 32px;
-                font-size: 9px;
-                font-weight: 700;
                 border: none;
-                border-radius: 6px;
-                padding: 4px;
+                border-radius: 50%;
+                width: 56px;
+                height: 56px;
+                font-size: 1.2em;
                 cursor: pointer;
-                -webkit-appearance: none;
-                -moz-appearance: none;
-                appearance: none;
+                box-shadow: 0 4px 16px rgba(0,123,255,0.4);
+                z-index: 1000;
+                transition: all 0.3s ease;
+            }
+
+            .mobile-view-toggle:active {
+                transform: scale(0.9);
+            }
+
+            .mobile-view-toggle.cards-active {
+                background: #28a745;
+            }
+
+            /* Animation de feedback */
+            .mobile-status-feedback {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(255,255,255,0.9);
+                border-radius: 50%;
+                width: 30px;
+                height: 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.2em;
+                opacity: 0;
+                animation: statusFeedback 0.6s ease-out;
+            }
+
+            @keyframes statusFeedback {
+                0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+                50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+                100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+            }
+
+            /* Indicateur de session */
+            .mobile-session-indicator {
                 text-align: center;
+                padding: 10px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border-radius: 8px;
+                margin-bottom: 15px;
+                font-weight: 600;
+            }
+
+            /* Recherche mobile améliorée */
+            .mobile-search {
+                background: white;
+                border-radius: 12px;
+                padding: 12px;
+                margin-bottom: 15px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            }
+
+            .mobile-search input {
+                width: 100%;
+                padding: 12px 16px;
+                border: 2px solid #e9ecef;
+                border-radius: 25px;
+                font-size: 1em;
+                background: #f8f9fa;
+                transition: all 0.2s;
+            }
+
+            .mobile-search input:focus {
+                border-color: #007bff;
+                background: white;
+                box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
             }
 
             /* Sélecteur de tri mobile */
@@ -1272,7 +1463,8 @@
                 </div>
             </div>
 
-            <div class="presence-grid">
+            <!-- Vue tableau classique (desktop) -->
+            <div class="presence-grid" id="desktopTableContainer">
                 <table class="presence-table" id="presenceTable">
                     <thead>
                         <tr id="headerRow">
@@ -1283,6 +1475,37 @@
                     <tbody id="presenceBody">
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Vue mobile cards révolutionnaire -->
+            <div class="mobile-presence-container" id="mobilePresenceContainer">
+                <!-- Recherche mobile -->
+                <div class="mobile-search">
+                    <input type="text" placeholder="🔍 Rechercher un joueur..." id="mobileSearchInput" oninput="filterMobilePlayers()">
+                </div>
+
+                <!-- Sélecteur de session -->
+                <div class="mobile-session-selector">
+                    <h3>📅 Choisir une session</h3>
+                    <div class="session-buttons" id="mobileSessionButtons">
+                        <!-- Sessions générées dynamiquement -->
+                    </div>
+                </div>
+
+                <!-- Indicateur de session actuelle -->
+                <div class="mobile-session-indicator" id="currentSessionIndicator">
+                    Sélectionnez une session pour commencer
+                </div>
+
+                <!-- Liste des joueurs en cards -->
+                <div class="mobile-players-list" id="mobilePlayersList">
+                    <!-- Cards générées dynamiquement -->
+                </div>
+
+                <!-- Bouton toggle vue -->
+                <button class="mobile-view-toggle" id="mobileViewToggle" onclick="toggleMobileView()" title="Basculer vers vue tableau">
+                    📊
+                </button>
             </div>
         </div>
 
@@ -1748,6 +1971,13 @@
             enhanceMobileExperience();
             improveMobileModals();
             
+            // Initialiser la vue mobile si sur mobile
+            if (isMobileDevice()) {
+                setTimeout(() => {
+                    initializeMobileView();
+                }, 500);
+            }
+            
             // Tentative d'initialisation Firebase avec retry
             let attempts = 0;
             const maxAttempts = 10;
@@ -2192,7 +2422,13 @@
             });
             
             // Optimiser pour mobile après rendu
-            setTimeout(() => optimizeTableForMobile(), 100);
+            setTimeout(() => {
+                optimizeTableForMobile();
+                // Mettre à jour la vue mobile si active
+                if (mobileViewActive) {
+                    initializeMobileView();
+                }
+            }, 100);
         }
 
         // Mettre à jour une présence
@@ -2347,7 +2583,13 @@
             }
             
             // Optimiser pour mobile après rendu
-            setTimeout(() => optimizeTableForMobile(), 100);
+            setTimeout(() => {
+                optimizeTableForMobile();
+                // Mettre à jour la vue mobile si active
+                if (mobileViewActive) {
+                    initializeMobileView();
+                }
+            }, 100);
         }
 
         // Fonction utilitaire pour surligner le texte de recherche
@@ -3533,6 +3775,247 @@
                 
                 return sessionDate >= startDate && sessionDate <= endDate;
             });
+        }
+
+        // ===== INTERFACE MOBILE CARDS RÉVOLUTIONNAIRE =====
+        
+        let currentMobileSession = null;
+        let mobileViewActive = false;
+
+        // Activer/désactiver la vue mobile
+        function toggleMobileView() {
+            if (!isMobileDevice()) return;
+            
+            mobileViewActive = !mobileViewActive;
+            const mobileContainer = document.getElementById('mobilePresenceContainer');
+            const desktopContainer = document.getElementById('desktopTableContainer');
+            const toggleBtn = document.getElementById('mobileViewToggle');
+            
+            if (mobileViewActive) {
+                mobileContainer.classList.add('active');
+                desktopContainer.classList.add('mobile-hidden');
+                toggleBtn.classList.add('cards-active');
+                toggleBtn.innerHTML = '📊';
+                toggleBtn.title = 'Basculer vers vue tableau';
+                initializeMobileView();
+            } else {
+                mobileContainer.classList.remove('active');
+                desktopContainer.classList.remove('mobile-hidden');
+                toggleBtn.classList.remove('cards-active');
+                toggleBtn.innerHTML = '📱';
+                toggleBtn.title = 'Basculer vers vue cards';
+            }
+        }
+
+        // Initialiser la vue mobile automatiquement
+        function initializeMobileView() {
+            if (isMobileDevice() && !mobileViewActive) {
+                toggleMobileView();
+            } else if (mobileViewActive) {
+                renderMobileSessions();
+                if (currentMobileSession) {
+                    renderMobilePlayerCards();
+                }
+            }
+        }
+
+        // Rendu des sessions pour mobile
+        function renderMobileSessions() {
+            const buttonsContainer = document.getElementById('mobileSessionButtons');
+            const filteredSessions = getFilteredSessions();
+            
+            buttonsContainer.innerHTML = '';
+            
+            filteredSessions.forEach((session, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'session-btn';
+                btn.onclick = () => selectMobileSession(session);
+                
+                if (index === 0 && !currentMobileSession) {
+                    currentMobileSession = session;
+                    btn.classList.add('active');
+                }
+                
+                if (currentMobileSession && currentMobileSession.id === session.id) {
+                    btn.classList.add('active');
+                }
+                
+                const date = new Date(session.date);
+                btn.innerHTML = `
+                    <span class="session-date">${date.getDate()}/${date.getMonth() + 1}</span>
+                    <span class="session-type">${session.type}</span>
+                `;
+                
+                buttonsContainer.appendChild(btn);
+            });
+        }
+
+        // Sélectionner une session mobile
+        function selectMobileSession(session) {
+            currentMobileSession = session;
+            
+            // Mettre à jour l'UI des boutons
+            document.querySelectorAll('.session-btn').forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            
+            // Mettre à jour l'indicateur
+            const date = new Date(session.date);
+            document.getElementById('currentSessionIndicator').innerHTML = 
+                `📅 ${session.type} du ${date.toLocaleDateString('fr-FR')}`;
+            
+            // Render les cards
+            renderMobilePlayerCards();
+            
+            // Haptic feedback
+            if (navigator.vibrate) navigator.vibrate(30);
+        }
+
+        // Rendu des cards de joueurs
+        function renderMobilePlayerCards() {
+            if (!currentMobileSession) return;
+            
+            const container = document.getElementById('mobilePlayersList');
+            const searchTerm = document.getElementById('mobileSearchInput').value.toLowerCase();
+            
+            // Filtrer et trier les joueurs
+            let filteredPlayers = players.filter(player => {
+                if (!searchTerm) return true;
+                return player.prenom.toLowerCase().includes(searchTerm) || 
+                       player.nom.toLowerCase().includes(searchTerm);
+            });
+            
+            // Trier selon la sélection actuelle
+            filteredPlayers = getSortedPlayers().filter(player => 
+                filteredPlayers.some(fp => fp.id === player.id)
+            );
+            
+            container.innerHTML = '';
+            
+            filteredPlayers.forEach(player => {
+                const status = presences[player.id][currentMobileSession.id] || 'rep';
+                const card = createMobilePlayerCard(player, status);
+                container.appendChild(card);
+            });
+            
+            if (filteredPlayers.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #6c757d;">
+                        <div style="font-size: 3em; margin-bottom: 15px;">🔍</div>
+                        <div>Aucun joueur trouvé</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Créer une card de joueur
+        function createMobilePlayerCard(player, currentStatus) {
+            const card = document.createElement('div');
+            card.className = `mobile-player-card status-${currentStatus}`;
+            
+            const statusLabels = {
+                'pst': 'Présent',
+                'abp': 'Absent Prévenu', 
+                'absp': 'Absent Sans Prévenir',
+                'bls': 'Blessé',
+                'vac': 'Vacances',
+                'rep': 'Repos',
+                'ca': 'Convoqué A',
+                'cb': 'Convoqué B',
+                'cc': 'Convoqué C',
+                'ret': 'Retard'
+            };
+            
+            const statusColors = {
+                'pst': '#28a745',
+                'abp': '#ffc107', 
+                'absp': '#dc3545',
+                'bls': '#fd7e14',
+                'vac': '#17a2b8',
+                'rep': '#6c757d',
+                'ca': '#20c997',
+                'cb': '#20c997',
+                'cc': '#20c997',
+                'ret': '#e83e8c'
+            };
+            
+            card.innerHTML = `
+                <div class="mobile-player-header">
+                    <div class="mobile-player-name">${player.prenom} ${player.nom}</div>
+                    <div class="mobile-current-status" style="background: ${statusColors[currentStatus]}">
+                        ${statusLabels[currentStatus] || currentStatus.toUpperCase()}
+                    </div>
+                </div>
+                <div class="mobile-status-grid">
+                    ${Object.keys(statusLabels).map(status => `
+                        <div class="mobile-status-btn btn-${status} ${status === currentStatus ? 'selected' : ''}"
+                             onclick="updateMobileStatus(${player.id}, '${status}', this)">
+                            ${statusLabels[status].split(' ')[0]}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Mettre à jour le statut depuis mobile
+        function updateMobileStatus(playerId, newStatus, buttonElement) {
+            if (!currentMobileSession) return;
+            
+            // Mettre à jour les données
+            presences[playerId][currentMobileSession.id] = newStatus;
+            updateStats();
+            autoSave();
+            
+            // Feedback visuel immédiat
+            showStatusFeedback(buttonElement, newStatus);
+            
+            // Haptic feedback
+            if (navigator.vibrate) navigator.vibrate(50);
+            
+            // Mettre à jour la card
+            setTimeout(() => {
+                renderMobilePlayerCards();
+            }, 300);
+        }
+
+        // Animation de feedback
+        function showStatusFeedback(buttonElement, status) {
+            const feedback = document.createElement('div');
+            feedback.className = 'mobile-status-feedback';
+            
+            const icons = {
+                'pst': '✅',
+                'abp': '⚠️', 
+                'absp': '❌',
+                'bls': '🤕',
+                'vac': '🏖️',
+                'rep': '😴',
+                'ca': '🥇',
+                'cb': '🥈',
+                'cc': '🥉',
+                'ret': '⏰'
+            };
+            
+            feedback.innerHTML = icons[status] || '✨';
+            buttonElement.appendChild(feedback);
+            
+            setTimeout(() => feedback.remove(), 600);
+        }
+
+        // Fonction de filtrage mobile
+        function filterMobilePlayers() {
+            renderMobilePlayerCards();
+        }
+
+        // Obtenir les sessions filtrées (réutilisation de la fonction existante ou nouvelle)
+        function getFilteredSessions() {
+            if (typeof getFilteredSessionsForPeriod === 'function') {
+                return getFilteredSessionsForPeriod();
+            }
+            
+            // Fallback : toutes les sessions triées par date
+            return sessions.slice().sort((a, b) => a.date.localeCompare(b.date));
         }
 
         // Modal pour l'export PDF personnalisé
