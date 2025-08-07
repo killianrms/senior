@@ -1628,19 +1628,20 @@
                     select.value = status;
                     select.onchange = function() {
                         updatePresence(player.id, session.id, this.value);
+                        this.className = `presence-cell status-${this.value}`;
                     };
                     
                     const options = [
-                        { value: 'pst', text: 'Présent', class: 'opt-pst' },
-                        { value: 'abp', text: 'Absent Prévenu', class: 'opt-abp' },
-                        { value: 'absp', text: 'Absent Sans Prévenir', class: 'opt-absp' },
-                        { value: 'bls', text: 'Blessé', class: 'opt-bls' },
-                        { value: 'vac', text: 'Vacances', class: 'opt-vac' },
-                        { value: 'rep', text: 'Repos', class: 'opt-rep' },
-                        { value: 'ca', text: 'Convoqué A', class: 'opt-ca' },
-                        { value: 'cb', text: 'Convoqué B', class: 'opt-cb' },
-                        { value: 'cc', text: 'Convoqué C', class: 'opt-cc' },
-                        { value: 'ret', text: 'Retard', class: 'opt-ret' }
+                        { value: 'pst', text: 'PST', class: 'opt-pst' },
+                        { value: 'abp', text: 'AbP', class: 'opt-abp' },
+                        { value: 'absp', text: 'AbSP', class: 'opt-absp' },
+                        { value: 'bls', text: 'BLS', class: 'opt-bls' },
+                        { value: 'vac', text: 'VAC', class: 'opt-vac' },
+                        { value: 'rep', text: 'REP', class: 'opt-rep' },
+                        { value: 'ca', text: 'Ca', class: 'opt-ca' },
+                        { value: 'cb', text: 'Cb', class: 'opt-cb' },
+                        { value: 'cc', text: 'Cc', class: 'opt-cc' },
+                        { value: 'ret', text: 'RET', class: 'opt-ret' }
                     ];
                     
                     options.forEach(opt => {
@@ -1664,8 +1665,6 @@
             presences[playerId][sessionId] = status;
             updateStats();
             autoSave();
-            // Re-render pour s'assurer que les couleurs sont correctement appliquées
-            renderPresenceTable();
         }
 
         // Fonction de tri des joueurs
@@ -1772,19 +1771,20 @@
                     select.value = status;
                     select.onchange = function() {
                         updatePresence(player.id, session.id, this.value);
+                        this.className = `presence-cell status-${this.value}`;
                     };
                     
                     const options = [
-                        { value: 'pst', text: 'Présent', class: 'opt-pst' },
-                        { value: 'abp', text: 'Absent Prévenu', class: 'opt-abp' },
-                        { value: 'absp', text: 'Absent Sans Prévenir', class: 'opt-absp' },
-                        { value: 'bls', text: 'Blessé', class: 'opt-bls' },
-                        { value: 'vac', text: 'Vacances', class: 'opt-vac' },
-                        { value: 'rep', text: 'Repos', class: 'opt-rep' },
-                        { value: 'ca', text: 'Convoqué A', class: 'opt-ca' },
-                        { value: 'cb', text: 'Convoqué B', class: 'opt-cb' },
-                        { value: 'cc', text: 'Convoqué C', class: 'opt-cc' },
-                        { value: 'ret', text: 'Retard', class: 'opt-ret' }
+                        { value: 'pst', text: 'PST', class: 'opt-pst' },
+                        { value: 'abp', text: 'AbP', class: 'opt-abp' },
+                        { value: 'absp', text: 'AbSP', class: 'opt-absp' },
+                        { value: 'bls', text: 'BLS', class: 'opt-bls' },
+                        { value: 'vac', text: 'VAC', class: 'opt-vac' },
+                        { value: 'rep', text: 'REP', class: 'opt-rep' },
+                        { value: 'ca', text: 'Ca', class: 'opt-ca' },
+                        { value: 'cb', text: 'Cb', class: 'opt-cb' },
+                        { value: 'cc', text: 'Cc', class: 'opt-cc' },
+                        { value: 'ret', text: 'RET', class: 'opt-ret' }
                     ];
                     
                     options.forEach(opt => {
