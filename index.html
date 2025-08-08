@@ -861,6 +861,79 @@
                 box-shadow: 0 2px 12px rgba(0,0,0,0.08);
                 border: 2px solid transparent;
                 transition: all 0.3s ease;
+                position: relative;
+                overflow: hidden;
+                user-select: none;
+                -webkit-user-select: none;
+                touch-action: pan-y;
+            }
+            
+            /* États de swipe */
+            .mobile-player-card.swipe-left {
+                transform: translateX(-20px);
+                background: linear-gradient(90deg, #fff 0%, #ffebee 100%);
+                border-color: #f44336;
+            }
+            
+            .mobile-player-card.swipe-right {
+                transform: translateX(20px);
+                background: linear-gradient(90deg, #fff 0%, #e8f5e8 100%);
+                border-color: #4caf50;
+            }
+            
+            .mobile-player-card.swipe-up {
+                transform: translateY(-10px);
+                background: linear-gradient(180deg, #fff 0%, #f5f5f5 100%);
+                border-color: #9e9e9e;
+            }
+            
+            .mobile-player-card.swipe-down {
+                transform: translateY(10px);
+                background: linear-gradient(180deg, #fff 0%, #e3f2fd 100%);
+                border-color: #2196f3;
+            }
+
+            /* Indicateurs de swipe */
+            .mobile-swipe-indicator {
+                position: absolute;
+                font-size: 2em;
+                font-weight: bold;
+                opacity: 0;
+                transition: all 0.2s ease;
+                pointer-events: none;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+            
+            .mobile-swipe-indicator.left {
+                left: 20px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #f44336;
+            }
+            
+            .mobile-swipe-indicator.right {
+                right: 20px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #4caf50;
+            }
+            
+            .mobile-swipe-indicator.up {
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                color: #9e9e9e;
+            }
+            
+            .mobile-swipe-indicator.down {
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                color: #2196f3;
+            }
+            
+            .mobile-swipe-indicator.show {
+                opacity: 1;
             }
 
             .mobile-player-card.status-pst { border-color: #28a745; background: #f8fff9; }
@@ -3907,10 +3980,11 @@
             }
         }
 
-        // Créer une card de joueur
+        // Créer une card de joueur avec gestes swipe
         function createMobilePlayerCard(player, currentStatus) {
             const card = document.createElement('div');
             card.className = `mobile-player-card status-${currentStatus}`;
+            card.dataset.playerId = player.id;
             
             const statusLabels = {
                 'pst': 'Présent',
@@ -3945,21 +4019,231 @@
                         ${statusLabels[currentStatus] || currentStatus.toUpperCase()}
                     </div>
                 </div>
-                <div class="mobile-status-grid">
-                    ${Object.keys(statusLabels).map(status => `
-                        <div class="mobile-status-btn btn-${status} ${status === currentStatus ? 'selected' : ''}"
-                             onclick="updateMobileStatus(${player.id}, '${status}', this)">
-                            ${statusLabels[status].split(' ')[0]}
-                        </div>
-                    `).join('')}
+                <div style="margin-top: 15px; text-align: center; color: #6c757d; font-size: 0.9em;">
+                    <div>👈 Absent • 👉 Présent • 👆 Repos • 👇 Menu</div>
                 </div>
+                
+                <!-- Indicateurs de swipe -->
+                <div class="mobile-swipe-indicator left">❌</div>
+                <div class="mobile-swipe-indicator right">✅</div>
+                <div class="mobile-swipe-indicator up">😴</div>
+                <div class="mobile-swipe-indicator down">📋</div>
             `;
+            
+            // Ajouter les événements de swipe
+            addSwipeGestures(card, player);
             
             return card;
         }
 
-        // Mettre à jour le statut depuis mobile
-        function updateMobileStatus(playerId, newStatus, buttonElement) {
+        // Ajouter les gestes de swipe aux cards
+        function addSwipeGestures(card, player) {
+            let startX = null;
+            let startY = null;
+            let currentX = null;
+            let currentY = null;
+            let isDragging = false;
+            
+            // Événements tactiles
+            card.addEventListener('touchstart', handleTouchStart, {passive: false});
+            card.addEventListener('touchmove', handleTouchMove, {passive: false});
+            card.addEventListener('touchend', handleTouchEnd, {passive: false});
+            
+            function handleTouchStart(e) {
+                const touch = e.touches[0];
+                startX = touch.clientX;
+                startY = touch.clientY;
+                currentX = startX;
+                currentY = startY;
+                isDragging = true;
+                
+                // Empêcher le scroll pendant le swipe
+                e.preventDefault();
+            }
+            
+            function handleTouchMove(e) {
+                if (!isDragging) return;
+                
+                const touch = e.touches[0];
+                currentX = touch.clientX;
+                currentY = touch.clientY;
+                
+                const deltaX = currentX - startX;
+                const deltaY = currentY - startY;
+                const absDeltaX = Math.abs(deltaX);
+                const absDeltaY = Math.abs(deltaY);
+                
+                // Déterminer la direction principale
+                if (absDeltaX > absDeltaY && absDeltaX > 30) {
+                    // Swipe horizontal
+                    card.classList.remove('swipe-up', 'swipe-down');
+                    if (deltaX < 0) {
+                        // Swipe gauche - Absent
+                        card.classList.remove('swipe-right');
+                        card.classList.add('swipe-left');
+                        showSwipeIndicator(card, 'left');
+                    } else {
+                        // Swipe droite - Présent
+                        card.classList.remove('swipe-left');
+                        card.classList.add('swipe-right');
+                        showSwipeIndicator(card, 'right');
+                    }
+                } else if (absDeltaY > absDeltaX && absDeltaY > 30) {
+                    // Swipe vertical
+                    card.classList.remove('swipe-left', 'swipe-right');
+                    if (deltaY < 0) {
+                        // Swipe haut - Repos
+                        card.classList.remove('swipe-down');
+                        card.classList.add('swipe-up');
+                        showSwipeIndicator(card, 'up');
+                    } else {
+                        // Swipe bas - Menu
+                        card.classList.remove('swipe-up');
+                        card.classList.add('swipe-down');
+                        showSwipeIndicator(card, 'down');
+                    }
+                } else {
+                    // Pas assez de mouvement
+                    resetCardState(card);
+                }
+                
+                e.preventDefault();
+            }
+            
+            function handleTouchEnd(e) {
+                if (!isDragging) return;
+                isDragging = false;
+                
+                const deltaX = currentX - startX;
+                const deltaY = currentY - startY;
+                const absDeltaX = Math.abs(deltaX);
+                const absDeltaY = Math.abs(deltaY);
+                
+                // Seuil pour déclencher l'action
+                const threshold = 80;
+                
+                if (absDeltaX > absDeltaY && absDeltaX > threshold) {
+                    if (deltaX < 0) {
+                        // Swipe gauche confirmé - Absent
+                        executeSwipeAction(player, 'absent');
+                    } else {
+                        // Swipe droite confirmé - Présent  
+                        executeSwipeAction(player, 'present');
+                    }
+                } else if (absDeltaY > absDeltaX && absDeltaY > threshold) {
+                    if (deltaY < 0) {
+                        // Swipe haut confirmé - Repos
+                        executeSwipeAction(player, 'repos');
+                    } else {
+                        // Swipe bas confirmé - Menu complet
+                        showFullStatusMenu(player, card);
+                    }
+                }
+                
+                // Reset de l'état visuel
+                setTimeout(() => resetCardState(card), 200);
+            }
+        }
+        
+        // Afficher l'indicateur de swipe
+        function showSwipeIndicator(card, direction) {
+            // Masquer tous les indicateurs
+            card.querySelectorAll('.mobile-swipe-indicator').forEach(indicator => {
+                indicator.classList.remove('show');
+            });
+            
+            // Afficher l'indicateur approprié
+            const indicator = card.querySelector(`.mobile-swipe-indicator.${direction}`);
+            if (indicator) {
+                indicator.classList.add('show');
+            }
+        }
+        
+        // Réinitialiser l'état de la card
+        function resetCardState(card) {
+            card.classList.remove('swipe-left', 'swipe-right', 'swipe-up', 'swipe-down');
+            card.querySelectorAll('.mobile-swipe-indicator').forEach(indicator => {
+                indicator.classList.remove('show');
+            });
+        }
+        
+        // Exécuter l'action de swipe
+        function executeSwipeAction(player, action) {
+            if (!currentMobileSession) return;
+            
+            let newStatus = 'rep'; // défaut
+            
+            switch(action) {
+                case 'present':
+                    newStatus = 'pst';
+                    break;
+                case 'absent':
+                    // Cycle entre les types d'absence
+                    const currentStatus = presences[player.id][currentMobileSession.id];
+                    if (currentStatus === 'abp') {
+                        newStatus = 'absp';
+                    } else if (currentStatus === 'absp') {
+                        newStatus = 'bls';
+                    } else {
+                        newStatus = 'abp';
+                    }
+                    break;
+                case 'repos':
+                    newStatus = 'rep';
+                    break;
+            }
+            
+            // Mettre à jour le statut
+            updateMobileStatus(player.id, newStatus);
+        }
+        
+        // Afficher le menu complet des statuts
+        function showFullStatusMenu(player, card) {
+            const statusOptions = [
+                {code: 'pst', label: '✅ Présent', color: '#28a745'},
+                {code: 'abp', label: '⚠️ Absent Prévenu', color: '#ffc107'},
+                {code: 'absp', label: '❌ Absent Sans Prévenir', color: '#dc3545'},
+                {code: 'bls', label: '🤕 Blessé', color: '#fd7e14'},
+                {code: 'vac', label: '🏖️ Vacances', color: '#17a2b8'},
+                {code: 'rep', label: '😴 Repos', color: '#6c757d'},
+                {code: 'ca', label: '🥇 Convoqué A', color: '#20c997'},
+                {code: 'cb', label: '🥈 Convoqué B', color: '#20c997'},
+                {code: 'cc', label: '🥉 Convoqué C', color: '#20c997'},
+                {code: 'ret', label: '⏰ Retard', color: '#e83e8c'}
+            ];
+            
+            const menuHtml = `
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px;" onclick="this.remove()">
+                    <div style="background: white; border-radius: 16px; padding: 20px; max-width: 300px; width: 100%;" onclick="event.stopPropagation()">
+                        <h3 style="margin: 0 0 20px 0; text-align: center; color: #2c3e50;">
+                            ${player.prenom} ${player.nom}
+                        </h3>
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
+                            ${statusOptions.map(option => `
+                                <button style="padding: 15px; border: none; border-radius: 8px; background: ${option.color}; color: white; font-size: 1em; font-weight: 600; cursor: pointer; transition: all 0.2s;" 
+                                        onclick="updateMobileStatus(${player.id}, '${option.code}'); this.closest('[style*=\"position: fixed\"]').remove();"
+                                        onmousedown="this.style.transform='scale(0.95)'"
+                                        onmouseup="this.style.transform='scale(1)'">
+                                    ${option.label}
+                                </button>
+                            `).join('')}
+                        </div>
+                        <button onclick="this.closest('[style*=\"position: fixed\"]').remove()" 
+                                style="width: 100%; margin-top: 15px; padding: 12px; border: 2px solid #dee2e6; border-radius: 8px; background: white; color: #6c757d; font-weight: 600; cursor: pointer;">
+                            Annuler
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', menuHtml);
+            
+            // Haptic feedback
+            if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+        }
+
+        // Mettre à jour le statut depuis mobile (version simplifiée)
+        function updateMobileStatus(playerId, newStatus) {
             if (!currentMobileSession) return;
             
             // Mettre à jour les données
@@ -3967,16 +4251,13 @@
             updateStats();
             autoSave();
             
-            // Feedback visuel immédiat
-            showStatusFeedback(buttonElement, newStatus);
-            
             // Haptic feedback
-            if (navigator.vibrate) navigator.vibrate(50);
+            if (navigator.vibrate) navigator.vibrate(60);
             
-            // Mettre à jour la card
+            // Mettre à jour l'affichage
             setTimeout(() => {
                 renderMobilePlayerCards();
-            }, 300);
+            }, 200);
         }
 
         // Animation de feedback
