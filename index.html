@@ -1413,6 +1413,95 @@
         body.contrasted-theme #themeToggle:hover {
             background: #333 !important;
         }
+        
+        /* Styles des badges */
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin: 1px;
+            white-space: nowrap;
+        }
+        
+        .badge-gold {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #b8860b;
+            border: 1px solid #daa520;
+            box-shadow: 0 2px 4px rgba(218, 165, 32, 0.3);
+        }
+        
+        .badge-silver {
+            background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+            color: #666;
+            border: 1px solid #999;
+            box-shadow: 0 2px 4px rgba(153, 153, 153, 0.3);
+        }
+        
+        .badge-bronze {
+            background: linear-gradient(135deg, #cd7f32, #d4af37);
+            color: #8b4513;
+            border: 1px solid #b8860b;
+            box-shadow: 0 2px 4px rgba(184, 134, 11, 0.3);
+        }
+        
+        .badge-assidu {
+            background: linear-gradient(135deg, #28a745, #34ce57);
+            color: white;
+            border: 1px solid #1e7e34;
+            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+        }
+        
+        .badge-regulier {
+            background: linear-gradient(135deg, #17a2b8, #20c997);
+            color: white;
+            border: 1px solid #138496;
+            box-shadow: 0 2px 4px rgba(23, 162, 184, 0.3);
+        }
+        
+        .badge-ponctuel {
+            background: linear-gradient(135deg, #6f42c1, #8e24aa);
+            color: white;
+            border: 1px solid #5a2d91;
+            box-shadow: 0 2px 4px rgba(111, 66, 193, 0.3);
+        }
+        
+        .badge-warning {
+            background: linear-gradient(135deg, #ffc107, #ffcd39);
+            color: #212529;
+            border: 1px solid #e0a800;
+            box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+        }
+        
+        /* Styles pour la légende des badges */
+        .legend-container {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+        
+        .legend-container:hover {
+            transform: translateY(-2px);
+        }
+        
+        .legend-section {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #4c63d2;
+            transition: border-color 0.2s ease;
+        }
+        
+        .legend-section:hover {
+            border-left-color: #28a745;
+        }
+        
+        .legend-section small {
+            color: #666;
+            margin-left: 4px;
+            font-size: 10px;
+        }
+        
     </style>
 </head>
 <body>
@@ -1624,6 +1713,43 @@
                     <div class="chart-title">Évolution Mensuelle</div>
                     <canvas id="evolutionChart"></canvas>
                 </div>
+            </div>
+            
+            <!-- Légende des badges -->
+            <div class="legend-container" style="background: #f8f9ff; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #e0e6ff;">
+                <h3 style="margin: 0 0 15px 0; color: #4c63d2; display: flex; align-items: center; gap: 8px;">
+                    <span>🏆</span> Légende des Badges
+                </h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+                    <div class="legend-section">
+                        <h4 style="margin: 0 0 8px 0; color: #2c3e50; font-size: 14px;">🎖️ Badges de Performance</h4>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px;">
+                            <span class="badge badge-assidu">💯 Parfait</span> <small>(100% + 0 retard)</small><br>
+                            <span class="badge badge-assidu">⭐ Excellent</span> <small>(≥95% + &lt;3 retards)</small><br>
+                            <span class="badge badge-assidu">🔥 Assidu</span> <small>(≥90% + &lt;5 retards)</small><br>
+                            <span class="badge badge-regulier">👍 Régulier</span> <small>(≥80%)</small><br>
+                            <span class="badge badge-ponctuel">📈 Présent</span> <small>(≥70%)</small>
+                        </div>
+                    </div>
+                    <div class="legend-section">
+                        <h4 style="margin: 0 0 8px 0; color: #2c3e50; font-size: 14px;">⏰ Badges de Ponctualité</h4>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px;">
+                            <span class="badge badge-ponctuel">⏰ Ponctuel</span> <small>(0 retard)</small><br>
+                            <span class="badge badge-warning">⚠️ Souvent en Retard</span> <small>(≥5 retards)</small>
+                        </div>
+                    </div>
+                    <div class="legend-section">
+                        <h4 style="margin: 0 0 8px 0; color: #2c3e50; font-size: 14px;">🥇 Badges de Classement</h4>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px;">
+                            <span class="badge badge-gold">🏆 Champion</span> <small>(1ère place)</small><br>
+                            <span class="badge badge-silver">🥈 Vice-Champion</span> <small>(2ème place)</small><br>
+                            <span class="badge badge-bronze">🥉 3ème Place</span> <small>(3ème place)</small>
+                        </div>
+                    </div>
+                </div>
+                <p style="margin: 10px 0 0 0; font-size: 11px; color: #666; font-style: italic;">
+                    💡 Les badges de rang tiennent compte des égalités parfaites (même taux + même nombre de retards)
+                </p>
             </div>
 
             <table class="ranking-table" id="rankingTable">
