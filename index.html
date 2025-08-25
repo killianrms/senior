@@ -1528,7 +1528,7 @@
                         <label for="sortSelect">📋 Trier par:</label>
                         <select id="sortSelect" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;" onchange="sortPlayers()">
                             <option value="default">Ordre par défaut</option>
-                            <option value="alphabetical-prenom">Ordre alphabétique (prénom)</option>
+                            <option value="alphabetical-prenom" selected>Ordre alphabétique (prénom)</option>
                             <option value="alphabetical-nom">Ordre alphabétique (nom)</option>
                             <option value="recent">Plus récent au plus ancien</option>
                         </select>
@@ -1711,7 +1711,7 @@
         let presences = {};
         let scheduledAbsences = []; // Nouvelle variable pour les absences programmées
         let currentPeriod = 'all';
-        let currentSort = 'default';
+        let currentSort = 'alphabetical-prenom';
         let isFirebaseInitialized = false;
         let unsubscribeListeners = [];
         let isContrastedTheme = false;
@@ -2422,6 +2422,9 @@
                 );
             }
             
+            // Trier les sessions par date décroissante (plus récente à gauche)
+            filteredSessions.sort((a, b) => b.date.localeCompare(a.date));
+            
             // Réinitialiser l'en-tête
             headerRow.innerHTML = '<th>Prénom</th><th>Nom</th>';
             
@@ -2569,6 +2572,9 @@
                     s.date >= currentPeriodObj.startDate && s.date <= currentPeriodObj.endDate
                 );
             }
+            
+            // Trier les sessions par date décroissante (plus récente à gauche)
+            filteredSessions.sort((a, b) => b.date.localeCompare(a.date));
             
             // Réinitialiser l'en-tête
             headerRow.innerHTML = '<th>Prénom</th><th>Nom</th>';
@@ -3205,8 +3211,8 @@
             } else {
                 datesHtml += '<table class="ranking-table"><thead><tr><th>Date</th><th>Type</th><th>Actions</th></tr></thead><tbody>';
                 
-                // Trier les sessions par date pour un affichage chronologique  
-                const sortedSessions = [...sessions].sort((a, b) => a.date.localeCompare(b.date));
+                // Trier les sessions par date pour un affichage chronologique (plus récente en premier)
+                const sortedSessions = [...sessions].sort((a, b) => b.date.localeCompare(a.date));
                 
                 sortedSessions.forEach((session) => {
                     const sessionIndex = sessions.findIndex(s => s.id === session.id);
@@ -3242,7 +3248,7 @@
             };
             
             sessions.push(newSession);
-            sessions.sort((a, b) => a.date.localeCompare(b.date));
+            sessions.sort((a, b) => b.date.localeCompare(a.date));
             
             // Initialiser les présences pour cette session avec REPOS par défaut
             // ou appliquer les statuts programmés
@@ -3294,8 +3300,8 @@
             sessions[index].date = formData.get('date');
             sessions[index].type = formData.get('type');
             
-            // Retrier les sessions par date
-            sessions.sort((a, b) => a.date.localeCompare(b.date));
+            // Retrier les sessions par date (plus récente à gauche)
+            sessions.sort((a, b) => b.date.localeCompare(a.date));
             
             updateStats();
             renderPresenceTable();
@@ -4295,8 +4301,8 @@
                 return getFilteredSessionsForPeriod();
             }
             
-            // Fallback : toutes les sessions triées par date
-            return sessions.slice().sort((a, b) => a.date.localeCompare(b.date));
+            // Fallback : toutes les sessions triées par date (plus récente à gauche)
+            return sessions.slice().sort((a, b) => b.date.localeCompare(a.date));
         }
 
         // Modal pour l'export PDF personnalisé
@@ -4326,6 +4332,24 @@
                             <input type="radio" name="periodType" value="range" onchange="updatePeriodInputs()">
                             Période personnalisée
                         </label>
+                    </div>
+                    
+                    <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 15px 0;">🏃‍♂️ Filtrer par type d'activité</h4>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                            <label style="display: flex; align-items: center; gap: 5px;">
+                                <input type="radio" name="sessionTypeFilter" value="all" checked onchange="updatePreview()">
+                                Tout
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px;">
+                                <input type="radio" name="sessionTypeFilter" value="Entraînement" onchange="updatePreview()">
+                                Entraînements uniquement
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px;">
+                                <input type="radio" name="sessionTypeFilter" value="Match" onchange="updatePreview()">
+                                Matchs uniquement
+                            </label>
+                        </div>
                     </div>
                     
                     <div id="periodInputs">
@@ -4363,11 +4387,17 @@
             
             switch(periodType) {
                 case 'single':
+                    const sessionTypeFilter = document.querySelector('input[name="sessionTypeFilter"]:checked')?.value || 'all';
+                    let availableSessions = sessions;
+                    if (sessionTypeFilter !== 'all') {
+                        availableSessions = sessions.filter(s => s.type === sessionTypeFilter);
+                    }
+                    
                     inputsHtml = `
                         <div class="form-group">
                             <label>Sélectionner l'entraînement :</label>
                             <select id="singleSession" style="width: 100%; padding: 8px;" onchange="updatePreview()">
-                                ${sessions.map(s => `<option value="${s.id}">${s.type} - ${new Date(s.date).toLocaleDateString('fr-FR')}</option>`).join('')}
+                                ${availableSessions.map(s => `<option value="${s.id}">${s.type} - ${new Date(s.date).toLocaleDateString('fr-FR')}</option>`).join('')}
                             </select>
                         </div>
                     `;
@@ -4423,14 +4453,22 @@
         function updatePreview() {
             const periodType = document.querySelector('input[name="periodType"]:checked').value;
             const previewText = document.getElementById('previewText');
+            const sessionTypeFilter = document.querySelector('input[name="sessionTypeFilter"]:checked')?.value || 'all';
             
             const filteredSessions = getFilteredSessions();
             
             if (filteredSessions.length === 0) {
-                previewText.textContent = 'Aucune session trouvée pour cette période';
+                const filterText = sessionTypeFilter === 'all' ? '' : ` (${sessionTypeFilter.toLowerCase()}s)`;
+                previewText.textContent = `Aucune session trouvée pour cette période${filterText}`;
             } else {
+                const trainingsCount = filteredSessions.filter(s => s.type === 'Entraînement').length;
+                const matchesCount = filteredSessions.filter(s => s.type === 'Match').length;
+                const typeText = sessionTypeFilter === 'all' 
+                    ? `(${trainingsCount} entraînements, ${matchesCount} matchs)`
+                    : `(${sessionTypeFilter.toLowerCase()}s uniquement)`;
+                
                 previewText.innerHTML = `
-                    <strong>Sessions trouvées :</strong> ${filteredSessions.length}<br>
+                    <strong>Sessions trouvées :</strong> ${filteredSessions.length} ${typeText}<br>
                     <strong>Première session :</strong> ${new Date(filteredSessions[0].date).toLocaleDateString('fr-FR')}<br>
                     <strong>Dernière session :</strong> ${new Date(filteredSessions[filteredSessions.length - 1].date).toLocaleDateString('fr-FR')}
                 `;
@@ -4485,6 +4523,12 @@
                     break;
             }
             
+            // Appliquer le filtre de type de session
+            const sessionTypeFilter = document.querySelector('input[name="sessionTypeFilter"]:checked')?.value || 'all';
+            if (sessionTypeFilter !== 'all') {
+                filteredSessions = filteredSessions.filter(s => s.type === sessionTypeFilter);
+            }
+            
             return filteredSessions.sort((a, b) => new Date(a.date) - new Date(b.date));
         }
 
@@ -4510,9 +4554,16 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('landscape');
             
-            // En-tête
+            // En-tête avec filtrage par type
             doc.setFontSize(20);
-            doc.text('Senior - Rapport de Présences', 148, 20, { align: 'center' });
+            const sessionTypeFilter = document.querySelector('input[name="sessionTypeFilter"]:checked')?.value || 'all';
+            let titleText = 'Senior - Rapport de Présences';
+            if (sessionTypeFilter === 'Entraînement') {
+                titleText = 'Senior - Rapport de Présences (Entraînements)';
+            } else if (sessionTypeFilter === 'Match') {
+                titleText = 'Senior - Rapport de Présences (Matchs)';
+            }
+            doc.text(titleText, 148, 20, { align: 'center' });
             
             // Période
             doc.setFontSize(12);
@@ -4521,7 +4572,7 @@
             
             switch(periodType) {
                 case 'single':
-                    periodText = `Session du ${new Date(filteredSessions[0].date).toLocaleDateString('fr-FR')}`;
+                    periodText = `Session du ${new Date(filteredSessions[0].date).toLocaleDateString('fr-FR')} (${filteredSessions[0].type})`;
                     break;
                 case 'week':
                     periodText = `Semaine du ${new Date(filteredSessions[0].date).toLocaleDateString('fr-FR')} au ${new Date(filteredSessions[filteredSessions.length - 1].date).toLocaleDateString('fr-FR')}`;
@@ -4534,6 +4585,13 @@
                 case 'range':
                     periodText = `Du ${new Date(filteredSessions[0].date).toLocaleDateString('fr-FR')} au ${new Date(filteredSessions[filteredSessions.length - 1].date).toLocaleDateString('fr-FR')}`;
                     break;
+            }
+            
+            // Ajouter info sur le type de sessions si filtré
+            if (sessionTypeFilter !== 'all') {
+                const trainingsCount = filteredSessions.filter(s => s.type === 'Entraînement').length;
+                const matchesCount = filteredSessions.filter(s => s.type === 'Match').length;
+                periodText += ` - ${filteredSessions.length} ${sessionTypeFilter.toLowerCase()}${filteredSessions.length > 1 ? 's' : ''}`;
             }
             
             doc.text(periodText, 148, 30, { align: 'center' });
@@ -4591,7 +4649,12 @@
             doc.text('Légende: PST=Présent, AbP=Absent Prévenu, AbSP=Absent Sans Prévenir, BLS=Blessé, VAC=Vacances, REP=Repos, RET=Retard', 14, finalY);
             
             // Sauvegarder le PDF
-            const fileName = `presences_senior_${periodText.replace(/\//g, '-').replace(/ /g, '_')}.pdf`;
+            let fileName = `presences_senior_${periodText.replace(/\//g, '-').replace(/ /g, '_')}`;
+            if (sessionTypeFilter !== 'all') {
+                fileName = fileName.replace('.pdf', '') + `_${sessionTypeFilter.toLowerCase()}s.pdf`;
+            } else {
+                fileName += '.pdf';
+            }
             doc.save(fileName);
             
             closeModal();
