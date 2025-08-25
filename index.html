@@ -2345,9 +2345,10 @@
                     
                     totalPossible++; // Compter seulement les sessions non-REP
                     
-                    if (status === 'pst' || status === 'ret' || status === 'vac' || status === 'ca' || status === 'cb' || status === 'cc') {
+                    if (status === 'pst' || status === 'ret' || status === 'ca' || status === 'cb' || status === 'cc') {
                         totalPresent++;
                     }
+                    // VAC compte maintenant comme absence, donc ne pas l'inclure dans totalPresent
                 });
             });
             
@@ -2651,10 +2652,9 @@
                         retards++; // Mais on compte aussi les retards
                         points += 3;
                     } else if (status === 'vac') {
-                        // VAC ne compte ni comme présence ni comme absence, juste informatif comme REP
-                        // Mais contrairement à REP, on le compte dans le total pour le calcul du taux
-                        present++; // Considérer VAC comme présence justifiée
-                        points += 1;
+                        // VAC compte maintenant comme une absence
+                        // Ne pas incrémenter present - VAC = absence
+                        points += 0;
                     } else if (status === 'ca' || status === 'cb' || status === 'cc') {
                         present++;
                         points += 3;
@@ -3337,9 +3337,10 @@
                     
                     total++; // Compter seulement les sessions non-REP
                     
-                    if (status === 'pst' || status === 'ret' || status === 'vac' || status === 'ca' || status === 'cb' || status === 'cc') {
+                    if (status === 'pst' || status === 'ret' || status === 'ca' || status === 'cb' || status === 'cc') {
                         present++;
                     }
+                    // VAC compte maintenant comme absence
                 });
                 
                 const rate = total > 0 ? Math.round((present / total) * 100) : 0;
@@ -3396,9 +3397,10 @@
                     
                     total++; // Compter seulement les sessions non-REP
                     
-                    if (status === 'pst' || status === 'ret' || status === 'vac' || status === 'ca' || status === 'cb' || status === 'cc') {
+                    if (status === 'pst' || status === 'ret' || status === 'ca' || status === 'cb' || status === 'cc') {
                         present++;
                     }
+                    // VAC compte maintenant comme absence
                 });
                 
                 const rate = total > 0 ? Math.round((present / total) * 100) : 0;
@@ -4356,11 +4358,12 @@
                     
                     effectiveSessions++; // Compter seulement les sessions non-REP
                     
-                    if (status === 'pst' || status === 'ca' || status === 'cb' || status === 'cc' || status === 'ret' || status === 'vac') {
+                    if (status === 'pst' || status === 'ca' || status === 'cb' || status === 'cc' || status === 'ret') {
                         totalPresent++;
-                    } else if (status === 'abp' || status === 'absp' || status === 'bls') {
+                    } else if (status === 'abp' || status === 'absp' || status === 'bls' || status === 'vac') {
                         totalAbsent++;
                     }
+                    // VAC compte maintenant comme absence
                 });
                 
                 // Ajouter les totaux
