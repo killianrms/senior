@@ -1654,6 +1654,23 @@
     </div>
 
     <script>
+        /* LOGIQUE DES STATUTS:
+         * 
+         * PRÉSENCES (comptent positivement dans les taux):
+         * - PST (Présent) = Présence
+         * - RET (Retard) = Présence + comptabilise les retards
+         * - CA/CB/CC (Convoqué A/B/C) = Présence
+         * 
+         * ABSENCES (comptent négativement dans les taux):
+         * - VAC (Vacances) = Absence
+         * - ABP (Absent Prévenu) = Absence
+         * - ABSP (Absent Sans Prévenir) = Absence
+         * - BLS (Blessé) = Absence
+         * 
+         * INFORMATIF UNIQUEMENT:
+         * - REP (Repos) = N'intervient dans aucun calcul de taux
+         */
+        
         // Variables globales
         let players = [];
         let sessions = [];
@@ -2346,7 +2363,7 @@
                     totalPossible++; // Compter seulement les sessions non-REP
                     
                     if (status === 'pst' || status === 'ret' || status === 'ca' || status === 'cb' || status === 'cc') {
-                        totalPresent++;
+                        totalPresent++; // PST, RET et Convoqués (CA/CB/CC) = Présences
                     }
                     // VAC compte maintenant comme absence, donc ne pas l'inclure dans totalPresent
                 });
@@ -2656,7 +2673,7 @@
                         // Ne pas incrémenter present - VAC = absence
                         points += 0;
                     } else if (status === 'ca' || status === 'cb' || status === 'cc') {
-                        present++;
+                        present++; // Convoqué = Présence
                         points += 3;
                     }
                     // Les absences (abp, absp, bls) ne sont pas comptées comme présentes
@@ -3338,7 +3355,7 @@
                     total++; // Compter seulement les sessions non-REP
                     
                     if (status === 'pst' || status === 'ret' || status === 'ca' || status === 'cb' || status === 'cc') {
-                        present++;
+                        present++; // PST, RET et Convoqués (CA/CB/CC) = Présences
                     }
                     // VAC compte maintenant comme absence
                 });
@@ -3398,7 +3415,7 @@
                     total++; // Compter seulement les sessions non-REP
                     
                     if (status === 'pst' || status === 'ret' || status === 'ca' || status === 'cb' || status === 'cc') {
-                        present++;
+                        present++; // PST, RET et Convoqués (CA/CB/CC) = Présences
                     }
                     // VAC compte maintenant comme absence
                 });
@@ -4359,9 +4376,9 @@
                     effectiveSessions++; // Compter seulement les sessions non-REP
                     
                     if (status === 'pst' || status === 'ca' || status === 'cb' || status === 'cc' || status === 'ret') {
-                        totalPresent++;
+                        totalPresent++; // PST, RET et Convoqués (CA/CB/CC) = Présences
                     } else if (status === 'abp' || status === 'absp' || status === 'bls' || status === 'vac') {
-                        totalAbsent++;
+                        totalAbsent++; // Absences et VAC = Absences
                     }
                     // VAC compte maintenant comme absence
                 });
