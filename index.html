@@ -2692,12 +2692,45 @@
             const rankingBody = document.getElementById('rankingBody');
             rankingBody.innerHTML = '';
             
+            // Identifier les égalités parfaites pour les badges de rang
+            const topPerformers = [];
+            let currentGroup = [];
+            let currentRate = null;
+            let currentRetards = null;
+            
+            rankings.forEach((player, index) => {
+                // Si c'est le même taux ET le même nombre de retards, ils sont ex-aequo
+                if (player.rate === currentRate && player.retards === currentRetards) {
+                    currentGroup.push({...player, index});
+                } else {
+                    if (currentGroup.length > 0) {
+                        topPerformers.push(currentGroup);
+                    }
+                    currentGroup = [{...player, index}];
+                    currentRate = player.rate;
+                    currentRetards = player.retards;
+                }
+            });
+            if (currentGroup.length > 0) {
+                topPerformers.push(currentGroup);
+            }
+            
             rankings.forEach((player, index) => {
                 const row = document.createElement('tr');
-                let rankDisplay = (index + 1).toString();
-                if (index === 0) rankDisplay = '🥇 1';
-                else if (index === 1) rankDisplay = '🥈 2';
-                else if (index === 2) rankDisplay = '🥉 3';
+                
+                // Calculer le vrai rang en tenant compte des égalités
+                let realRank = 1;
+                for (let i = 0; i < topPerformers.length; i++) {
+                    if (topPerformers[i].some(p => p.index === index)) {
+                        break;
+                    }
+                    realRank += topPerformers[i].length;
+                }
+                
+                let rankDisplay = realRank.toString();
+                if (realRank === 1) rankDisplay = '🥇 1';
+                else if (realRank === 2) rankDisplay = '🥈 2';
+                else if (realRank === 3) rankDisplay = '🥉 3';
                 
                 const badges = [];
                 // Badges de performance
@@ -2711,10 +2744,14 @@
                 if (player.retards === 0 && player.present > 0) badges.push('<span class="badge badge-ponctuel">⏰ Ponctuel</span>');
                 else if (player.retards >= 5) badges.push('<span class="badge badge-warning">⚠️ Souvent en Retard</span>');
                 
-                // Badges spéciaux
-                if (index === 0) badges.push('<span class="badge badge-gold">🏆 Champion</span>');
-                else if (index === 1) badges.push('<span class="badge badge-silver">🥈 Vice-Champion</span>');
-                else if (index === 2) badges.push('<span class="badge badge-bronze">🥉 3ème Place</span>');
+                // Badges spéciaux avec gestion des égalités parfaites
+                if (realRank === 1) {
+                    badges.push('<span class="badge badge-gold">🏆 Champion</span>');
+                } else if (realRank === 2) {
+                    badges.push('<span class="badge badge-silver">🥈 Vice-Champion</span>');
+                } else if (realRank === 3) {
+                    badges.push('<span class="badge badge-bronze">🥉 3ème Place</span>');
+                }
                 
                 row.innerHTML = `
                     <td><span class="rank-medal rank-${index + 1}">${rankDisplay}</span></td>
